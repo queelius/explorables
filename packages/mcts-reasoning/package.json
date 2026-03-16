@@ -1,0 +1,8 @@
+{
+  "name": "@explorables/mcts-reasoning",
+  "version": "1.0.0",
+  "description": "Interactive explorable: Watch an LLM Think — MCTS for LLM reasoning",
+  "deploy": {
+    "slug": "2026-03-16-mcts-reasoning"
+  }
+}

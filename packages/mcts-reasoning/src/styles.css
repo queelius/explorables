@@ -1,0 +1,391 @@
+/* =========================================================
+   CSS CUSTOM PROPERTIES (scoped to container)
+   ========================================================= */
+#mcts-explorable {
+  --bg: #1a1a2e;
+  --bg-dark: #0d0d1a;
+  --accent: #e94560;
+  --accent2: #4a9eff;
+  --text: #e0e0e0;
+  --text-dim: #888;
+
+  /* Base styles (were on body) */
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+  margin: 0;
+}
+
+#mcts-explorable *, #mcts-explorable *::before, #mcts-explorable *::after {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   HERO SECTION
+   ========================================================= */
+#mcts-explorable #hero {
+  background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg) 100%);
+  text-align: center;
+  padding: 80px 24px 60px;
+}
+
+#mcts-explorable #hero .subtitle {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 16px 0;
+  font-variant: small-caps;
+}
+
+#mcts-explorable .scroll-indicator {
+  margin-top: 30px;
+  color: var(--text-dim);
+  font-size: 1.5rem;
+  animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+#mcts-explorable #hero h1 {
+  font-size: 2.5rem;
+  color: #ffffff;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+}
+
+#mcts-explorable #hero .description {
+  color: var(--text-dim);
+  font-size: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   TWO-PANEL SCROLLYTELLING LAYOUT
+   ========================================================= */
+#mcts-explorable #scrollytelling {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Left: narrative column */
+#mcts-explorable #narrative {
+  width: 40%;
+  padding: 24px;
+  overflow-y: auto;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+#mcts-explorable #narrative p {
+  max-width: 45ch;
+  margin-bottom: 16px;
+}
+
+#mcts-explorable #narrative h2 {
+  margin-top: 40px;
+  margin-bottom: 16px;
+}
+
+/* Right: sticky tree panel */
+#mcts-explorable #tree-panel {
+  width: 60%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#mcts-explorable #tree-svg {
+  width: 100%;
+  height: 80%;
+}
+
+/* Node detail inspector */
+#mcts-explorable #node-detail {
+  width: 100%;
+  padding: 12px 20px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  border-left: 3px solid var(--accent);
+  background: rgba(233, 69, 96, 0.05);
+  min-height: 60px;
+  margin: 0 20px;
+  max-width: calc(100% - 40px);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* =========================================================
+   NARRATIVE SECTIONS
+   ========================================================= */
+#mcts-explorable #narrative section {
+  min-height: 80vh;
+  padding: 40px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#mcts-explorable #narrative section:last-child {
+  border-bottom: none;
+}
+
+#mcts-explorable #narrative section h2 {
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  margin: 0 0 20px 0;
+  font-weight: bold;
+}
+
+#mcts-explorable #narrative section p {
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 0.9rem;
+  margin: 0 0 16px 0;
+}
+
+/* =========================================================
+   NODE & EDGE ANIMATIONS
+   ========================================================= */
+#mcts-explorable .node-group {
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+#mcts-explorable .node-group.entering {
+  opacity: 0;
+  transform-origin: center;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+#mcts-explorable .node-group.pulsing circle {
+  stroke: var(--accent);
+  transition: stroke 300ms ease;
+}
+
+#mcts-explorable .edge {
+  transition: stroke 400ms ease, stroke-width 400ms ease;
+}
+
+#mcts-explorable .edge.pulsing {
+  stroke: var(--accent) !important;
+  stroke-width: 3 !important;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+#mcts-explorable .node-group.highlighted circle {
+  animation: glow-pulse 1.5s ease infinite;
+}
+
+/* =========================================================
+   NARRATIVE CONTENT STYLES
+   ========================================================= */
+#mcts-explorable .puzzle-box {
+  border: 1px solid var(--accent);
+  padding: 16px 20px;
+  margin: 16px 0;
+  border-radius: 4px;
+  background: rgba(233, 69, 96, 0.05);
+}
+
+#mcts-explorable .puzzle-box p { margin: 4px 0; }
+
+#mcts-explorable .puzzle-hint {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-top: 8px !important;
+}
+
+#mcts-explorable .llm-output {
+  background: var(--bg-dark);
+  border-left: 3px solid var(--accent);
+  padding: 16px;
+  margin: 16px 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+#mcts-explorable .flaw-annotation {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+#mcts-explorable .transition-text {
+  color: var(--accent);
+  font-style: italic;
+  font-size: 1.1rem;
+  margin-top: 24px;
+  line-height: 1.6;
+}
+
+#mcts-explorable .formula-box {
+  background: var(--bg-dark);
+  padding: 12px 20px;
+  margin: 16px 0;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+#mcts-explorable .accent { color: var(--accent); }
+#mcts-explorable .accent2 { color: var(--accent2); }
+
+#mcts-explorable .branch-comparison {
+  margin: 16px 0;
+}
+
+#mcts-explorable .branch-example {
+  background: var(--bg-dark);
+  padding: 10px 16px;
+  margin: 8px 0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+#mcts-explorable .branch-label {
+  color: var(--accent);
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+#mcts-explorable .hint-text {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+#mcts-explorable .score-high { color: #4ade80; font-weight: bold; }
+#mcts-explorable .score-low { color: #f87171; font-weight: bold; }
+
+/* =========================================================
+   INTERACTIVE CONTROLS: UCB1, ROLLOUT, BACKPROP
+   ========================================================= */
+#mcts-explorable .ucb1-slider { margin: 16px 0; }
+#mcts-explorable .ucb1-slider label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 6px; }
+#mcts-explorable .ucb1-slider input[type="range"] { width: 100%; accent-color: var(--accent); }
+#mcts-explorable .slider-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+#mcts-explorable .slider-labels .current-value { color: var(--accent); font-weight: bold; }
+
+#mcts-explorable .rollout-controls,
+#mcts-explorable .backprop-controls { margin: 16px 0; display: flex; align-items: center; gap: 12px; }
+
+#mcts-explorable .control-btn { background: var(--bg-dark); border: 1px solid var(--accent); color: var(--accent); padding: 6px 16px; cursor: pointer; font-family: inherit; font-size: 0.85rem; border-radius: 3px; }
+#mcts-explorable .control-btn:hover { background: rgba(233, 69, 96, 0.1); }
+
+#mcts-explorable .speed-buttons { display: flex; gap: 4px; }
+#mcts-explorable .speed-btn { background: var(--bg-dark); border: 1px solid #ffffff20; color: var(--text-dim); padding: 4px 10px; cursor: pointer; font-family: inherit; font-size: 0.8rem; border-radius: 3px; }
+#mcts-explorable .speed-btn.active { border-color: var(--accent); color: var(--accent); }
+
+#mcts-explorable .math-display {
+  background: var(--bg-dark);
+  padding: 12px 16px;
+  margin: 12px 0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  min-height: 40px;
+  border-left: 2px solid var(--accent2);
+}
+
+/* =========================================================
+   ASIDE / COLLAPSIBLE
+   ========================================================= */
+#mcts-explorable .aside { margin: 20px 0; border: 1px solid #ffffff15; border-radius: 4px; }
+#mcts-explorable .aside summary { padding: 10px 16px; cursor: pointer; color: var(--accent2); font-size: 0.9rem; }
+#mcts-explorable .aside summary:hover { background: rgba(74, 158, 255, 0.05); }
+#mcts-explorable .aside-content { padding: 0 16px 16px; }
+#mcts-explorable .split-comparison { display: flex; gap: 16px; margin: 12px 0; }
+#mcts-explorable .comparison-panel { flex: 1; background: var(--bg-dark); padding: 12px; border-radius: 4px; text-align: center; }
+#mcts-explorable .comparison-panel h4 { margin: 0 0 8px; font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+/* =========================================================
+   SAMPLING CONTROLS
+   ========================================================= */
+#mcts-explorable .sampling-controls,
+#mcts-explorable .voting-controls { margin: 12px 0; }
+
+#mcts-explorable .strategy-toggles,
+#mcts-explorable .voting-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+
+#mcts-explorable .strategy-btn { background: var(--bg-dark); border: 1px solid #ffffff20; color: var(--text-dim); padding: 5px 12px; cursor: pointer; font-family: inherit; font-size: 0.8rem; border-radius: 3px; }
+#mcts-explorable .strategy-btn.active { border-color: var(--accent); color: var(--accent); }
+#mcts-explorable .strategy-btn:hover { background: rgba(233, 69, 96, 0.05); }
+
+#mcts-explorable #answer-histogram { margin: 16px 0; min-height: 80px; }
+
+/* =========================================================
+   UCB1 TOOLTIP
+   ========================================================= */
+#mcts-explorable #ucb1-tooltip {
+  position: fixed;
+  display: none;
+  background: var(--bg-dark);
+  border: 1px solid var(--accent);
+  padding: 8px 12px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.5;
+  z-index: 1000;
+  pointer-events: none;
+  white-space: pre;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* =========================================================
+   RESPONSIVE BREAKPOINT — STACKED LAYOUT
+   ========================================================= */
+@media (max-width: 1000px) {
+  #mcts-explorable #scrollytelling {
+    flex-direction: column;
+  }
+
+  #mcts-explorable #narrative {
+    width: 100%;
+    order: 2;
+  }
+
+  #mcts-explorable #tree-panel {
+    width: 100%;
+    height: 50vh;
+    position: relative;
+    top: auto;
+    order: 1;
+  }
+}
+
+/* =========================================================
+   KEYBOARD ACCESSIBILITY — FOCUS INDICATORS
+   ========================================================= */
+#mcts-explorable .control-btn:focus,
+#mcts-explorable .strategy-btn:focus,
+#mcts-explorable .speed-btn:focus,
+#mcts-explorable input[type="range"]:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

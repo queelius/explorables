@@ -1,0 +1,35 @@
+{
+  "single_pass_wrong": "A says 'B is a knave,' which suggests A might be a knave trying to cast suspicion on B. If A is a knave, then A's statement is a lie, meaning B is actually a knight. B says 'We are the same type,' and since B would be a knight telling the truth, A and B must indeed be the same type. This confirms A and B are both knaves — wait, but B is a knight in this chain, so they'd have to both be knights. That seems fine: knaves lie and knights tell the truth, and both statements hold together neatly. ANSWER: A is a knave.",
+  "branches": {
+    "A": {
+      "label": "Assume A is a knight",
+      "steps": [
+        "Let's assume A is a knight. Knights always tell the truth.",
+        "A says 'B is a knave.' Since A is truthful, B must be a knave.",
+        "B says 'We are the same type.' Since B is a knave, B lies. A is a knight, B is a knave: they are different types. B's lie is consistent. ANSWER: A is a knight."
+      ],
+      "answer": "A is a knight",
+      "score": 1.0
+    },
+    "B": {
+      "label": "Assume A is a knave",
+      "steps": [
+        "Let's assume A is a knave. Knaves always lie.",
+        "A says 'B is a knave.' Since A lies, B must be a knight.",
+        "B says 'We are the same type.' Since B is a knight, B tells truth. So A and B are the same type. But A is a knave and B is a knight: they are different types. Contradiction. ANSWER: A is a knave."
+      ],
+      "answer": "A is a knave",
+      "score": 0.0
+    },
+    "C": {
+      "label": "Start from B's statement",
+      "steps": [
+        "Let me start with B's statement. B says 'We are the same type.' That's interesting.",
+        "If B is telling the truth, they're the same type. If B is lying, they're different types. Either way, B's statement constrains the relationship between A and B.",
+        "A's statement about B being a knave seems important. If A is right about B, then B is a knave, and B's statement is a lie. That seems to work. ANSWER: A is a knight."
+      ],
+      "answer": "A is a knight",
+      "score": 0.6
+    }
+  }
+}
