@@ -79,6 +79,74 @@ export class FuzzyEngine {
     }
     return results;
   }
+
+  // --- Forward chaining (Task 4) ---
+
+  private satisfyConditions(conditions: Condition[]): MatchResult[] {
+    let current: MatchResult[] = [{ bindings: {}, deg: 1 }];
+    for (const cond of conditions) {
+      const next: MatchResult[] = [];
+      for (const cur of current) {
+        for (const m of this.matchCondition(cond, cur.bindings)) {
+          next.push({ bindings: m.bindings, deg: Math.min(cur.deg, m.deg) });
+        }
+      }
+      current = next;
+      if (current.length === 0) break;
+    }
+    return current;
+  }
+
+  private resolveArg(arg: string, bindings: Record<string, string | number>): string {
+    return arg.startsWith('?') && arg in bindings ? String(bindings[arg]) : arg;
+  }
+
+  private applyAction(action: Action, bindings: Record<string, string | number>): boolean {
+    const args = action.fact.args.map((a) => this.resolveArg(a, bindings));
+    const key = factKey(action.fact.pred, args);
+    if (action.type === 'remove') {
+      return this.facts.delete(key);
+    }
+    const deg = evalDegree(action.fact.deg, bindings);
+    const existing = this.facts.get(key);
+    if (existing && existing.deg >= deg) return false;
+    this.facts.set(key, { pred: action.fact.pred, args, deg });
+    return true;
+  }
+
+  runOneIteration(): { changed: boolean; firedRules: string[] } {
+    let changed = false;
+    const firedThisPass: string[] = [];
+    for (const rule of this.rules) {
+      const matches = this.satisfyConditions(rule.conditions);
+      for (const m of matches) {
+        const firedKey = `${rule.name}|${JSON.stringify(m.bindings)}`;
+        if (this.fired.has(firedKey)) continue;
+        this.fired.add(firedKey);
+        firedThisPass.push(rule.name);
+        for (const action of rule.actions) {
+          if (this.applyAction(action, m.bindings)) changed = true;
+        }
+      }
+    }
+    return { changed, firedRules: firedThisPass };
+  }
+
+  run(maxIterations = 100): InferenceResult {
+    const allFired: string[] = [];
+    let iterations = 0;
+    for (let i = 0; i < maxIterations; i++) {
+      iterations++;
+      const { changed, firedRules } = this.runOneIteration();
+      allFired.push(...firedRules);
+      if (!changed) break;
+    }
+    return { facts: this.facts, firedRules: allFired, iterations };
+  }
+
+  resetFired(): void {
+    this.fired.clear();
+  }
 }
 
 function evalConstraint(dc: [string, string, number], deg: number): boolean {
@@ -91,5 +159,35 @@ function evalConstraint(dc: [string, string, number], deg: number): boolean {
     case '==': return deg === threshold;
     case '!=': return deg !== threshold;
     default: return true;
+  }
+}
+
+function resolveOperand(
+  v: number | string,
+  bindings: Record<string, string | number>
+): number {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string' && v.startsWith('?') && v in bindings) return Number(bindings[v]);
+  return Number(v);
+}
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
+export function evalDegree(
+  expr: DegreeExpr | string,
+  bindings: Record<string, string | number>
+): number {
+  if (typeof expr === 'number') return clamp01(expr);
+  if (typeof expr === 'string') return clamp01(resolveOperand(expr, bindings));
+  const [op, ...operands] = expr;
+  const vals = operands.map((o) => resolveOperand(o, bindings));
+  switch (op) {
+    case '*': return clamp01(vals.reduce((a, b) => a * b, 1));
+    case '+': return clamp01(vals.reduce((a, b) => a + b, 0));
+    case '-': return clamp01(vals.reduce((a, b) => a - b));
+    case '/': return clamp01(vals.reduce((a, b) => a / b));
+    case 'min': return clamp01(Math.min(...vals));
+    case 'max': return clamp01(Math.max(...vals));
+    default: return clamp01(vals[0] ?? 0);
   }
 }

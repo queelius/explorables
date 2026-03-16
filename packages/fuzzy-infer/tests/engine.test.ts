@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { FuzzyEngine } from '../src/engine';
-import type { Condition } from '../src/types';
+import { FuzzyEngine, evalDegree } from '../src/engine';
+import type { Condition, Rule } from '../src/types';
 
 // --- Task 2: Fact storage and fuzzy-OR ---
 
@@ -151,5 +151,210 @@ describe('FuzzyEngine — matchCondition', () => {
     const results = engine.matchCondition(cond, {});
     expect(results).toHaveLength(1);
     expect(results[0].bindings['?x']).toBe('tea');
+  });
+});
+
+// --- Task 4: Forward chaining and degree expressions ---
+
+describe('evalDegree', () => {
+  it('returns literal number unchanged', () => {
+    expect(evalDegree(0.7, {})).toBe(0.7);
+  });
+
+  it('resolves a variable from bindings', () => {
+    expect(evalDegree('?d' as any, { '?d': 0.8 })).toBe(0.8);
+  });
+
+  it('evaluates multiply expression', () => {
+    expect(evalDegree(['*', 0.9, '?d'], { '?d': 0.8 })).toBeCloseTo(0.72);
+  });
+
+  it('evaluates add expression', () => {
+    expect(evalDegree(['+', 0.3, 0.4], {})).toBeCloseTo(0.7);
+  });
+
+  it('evaluates subtract expression', () => {
+    expect(evalDegree(['-', 0.9, 0.3], {})).toBeCloseTo(0.6);
+  });
+
+  it('evaluates divide expression', () => {
+    expect(evalDegree(['/', 0.8, 2], {})).toBeCloseTo(0.4);
+  });
+
+  it('evaluates min expression', () => {
+    expect(evalDegree(['min', 0.3, 0.7], {})).toBeCloseTo(0.3);
+  });
+
+  it('evaluates max expression', () => {
+    expect(evalDegree(['max', 0.3, 0.7], {})).toBeCloseTo(0.7);
+  });
+
+  it('clamps result to [0, 1] — upper', () => {
+    expect(evalDegree(['+', 0.8, 0.5], {})).toBe(1);
+  });
+
+  it('clamps result to [0, 1] — lower', () => {
+    expect(evalDegree(['-', 0.2, 0.5], {})).toBe(0);
+  });
+});
+
+describe('FuzzyEngine — forward chaining', () => {
+  let engine: FuzzyEngine;
+
+  beforeEach(() => {
+    engine = new FuzzyEngine();
+  });
+
+  it('single rule fires and adds a fact', () => {
+    engine.addFact({ pred: 'hot', args: ['coffee'], deg: 0.9 });
+    engine.addRule({
+      name: 'hot-implies-drink',
+      conditions: [{ pred: 'hot', args: ['?x'] }],
+      actions: [{ type: 'add', fact: { pred: 'drink', args: ['?x'], deg: 0.8 } }],
+      priority: 50,
+    });
+    const result = engine.run();
+    expect(result.facts.get('drink|coffee')).toEqual({
+      pred: 'drink',
+      args: ['coffee'],
+      deg: 0.8,
+    });
+    expect(result.firedRules).toContain('hot-implies-drink');
+  });
+
+  it('chains across iterations', () => {
+    engine.addFact({ pred: 'A', args: [], deg: 0.9 });
+    engine.addRule({
+      name: 'A-to-B',
+      conditions: [{ pred: 'A', args: [] }],
+      actions: [{ type: 'add', fact: { pred: 'B', args: [], deg: 0.8 } }],
+      priority: 50,
+    });
+    engine.addRule({
+      name: 'B-to-C',
+      conditions: [{ pred: 'B', args: [] }],
+      actions: [{ type: 'add', fact: { pred: 'C', args: [], deg: 0.7 } }],
+      priority: 50,
+    });
+    const result = engine.run();
+    expect(result.facts.has('B|')).toBe(true);
+    expect(result.facts.has('C|')).toBe(true);
+    expect(result.iterations).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does not fire the same rule+bindings twice', () => {
+    engine.addFact({ pred: 'x', args: [], deg: 1 });
+    engine.addRule({
+      name: 'dup',
+      conditions: [{ pred: 'x', args: [] }],
+      actions: [{ type: 'add', fact: { pred: 'y', args: [], deg: 1 } }],
+      priority: 50,
+    });
+    const result = engine.run();
+    // Should have fired exactly once
+    expect(result.firedRules.filter((r) => r === 'dup')).toHaveLength(1);
+  });
+
+  it('propagates degree via expression', () => {
+    engine.addFact({ pred: 'sensor', args: ['temp'], deg: 0.8 });
+    engine.addRule({
+      name: 'degrade',
+      conditions: [{ pred: 'sensor', args: ['?x'], degVar: '?d' }],
+      actions: [{ type: 'add', fact: { pred: 'reading', args: ['?x'], deg: ['*', 0.9, '?d'] } }],
+      priority: 50,
+    });
+    const result = engine.run();
+    const reading = result.facts.get('reading|temp');
+    expect(reading!.deg).toBeCloseTo(0.72);
+  });
+
+  it('remove action deletes a fact', () => {
+    engine.addFact({ pred: 'old', args: ['data'], deg: 1.0 });
+    engine.addRule({
+      name: 'cleanup',
+      conditions: [{ pred: 'old', args: ['?x'] }],
+      actions: [{ type: 'remove', fact: { pred: 'old', args: ['?x'], deg: 0 } }],
+      priority: 50,
+    });
+    const result = engine.run();
+    expect(result.facts.has('old|data')).toBe(false);
+  });
+
+  it('runOneIteration does a single pass', () => {
+    // Within one pass, rules fire sequentially: later rules see facts from earlier rules.
+    // Use a chain where B-to-C has LOWER priority than A-to-B, so C-to-D fires after B-to-C.
+    // We verify that one call to runOneIteration fires all eligible rules exactly once
+    // and a second call returns changed=false (fixed point).
+    engine.addFact({ pred: 'A', args: [], deg: 1 });
+    engine.addRule({
+      name: 'A-to-B',
+      conditions: [{ pred: 'A', args: [] }],
+      actions: [{ type: 'add', fact: { pred: 'B', args: [], deg: 0.9 } }],
+      priority: 50,
+    });
+    engine.addRule({
+      name: 'B-to-C',
+      conditions: [{ pred: 'B', args: [] }],
+      actions: [{ type: 'add', fact: { pred: 'C', args: [], deg: 0.8 } }],
+      priority: 40,
+    });
+    const pass1 = engine.runOneIteration();
+    expect(pass1.changed).toBe(true);
+    expect(pass1.firedRules).toContain('A-to-B');
+    expect(pass1.firedRules).toContain('B-to-C');
+    expect(engine.getFacts().has('B|')).toBe(true);
+    expect(engine.getFacts().has('C|')).toBe(true);
+    // Second pass: nothing new to fire
+    const pass2 = engine.runOneIteration();
+    expect(pass2.changed).toBe(false);
+  });
+
+  it('resetFired allows re-firing rules', () => {
+    engine.addFact({ pred: 'x', args: [], deg: 1 });
+    engine.addRule({
+      name: 'r',
+      conditions: [{ pred: 'x', args: [] }],
+      actions: [{ type: 'add', fact: { pred: 'y', args: [], deg: 0.5 } }],
+      priority: 50,
+    });
+    engine.run();
+    engine.resetFired();
+    // After adding a higher-degree fact for y, rule can re-fire but fact won't change
+    // because fuzzy-OR already has y at 0.5; the point is resetFired clears history
+    const pass = engine.runOneIteration();
+    // Rule fires again since history was cleared (even though no new facts added)
+    expect(pass.firedRules).toContain('r');
+  });
+
+  it('satisfies multi-condition rules', () => {
+    engine.addFact({ pred: 'has', args: ['wings'], deg: 0.9 });
+    engine.addFact({ pred: 'has', args: ['feathers'], deg: 0.8 });
+    engine.addRule({
+      name: 'bird-check',
+      conditions: [
+        { pred: 'has', args: ['wings'] },
+        { pred: 'has', args: ['feathers'] },
+      ],
+      actions: [{ type: 'add', fact: { pred: 'is', args: ['bird'], deg: 0.85 } }],
+      priority: 50,
+    });
+    const result = engine.run();
+    expect(result.facts.has('is|bird')).toBe(true);
+  });
+
+  it('respects max iterations limit', () => {
+    // Rule that always produces something new (unbounded chain)
+    // We'll use a single self-referencing pattern: won't actually loop
+    // because duplicate firing prevention stops it.
+    // Instead, test that run() returns within maxIterations.
+    engine.addFact({ pred: 'x', args: [], deg: 1 });
+    engine.addRule({
+      name: 'noop',
+      conditions: [{ pred: 'x', args: [] }],
+      actions: [{ type: 'add', fact: { pred: 'x', args: [], deg: 1 } }],
+      priority: 50,
+    });
+    const result = engine.run(5);
+    expect(result.iterations).toBeLessThanOrEqual(5);
   });
 });
