@@ -1,0 +1,178 @@
+import type { Fact, Rule } from '../types';
+import { TreeRenderer } from '../renderer';
+import { FuzzyEngine } from '../engine';
+import { layoutTree } from '../layout';
+import { WidgetControls, type TraitToggle } from '../controls';
+import { RULES_10 } from '../data/rules-10';
+
+/**
+ * Full creature builder widget.
+ *
+ * Layout: flex container with controls on left, canvas on right.
+ * Trait toggles via WidgetControls. On trait change: create fresh
+ * FuzzyEngine, add active traits, add rules, run, update layout.
+ *
+ * Mounted twice in the post:
+ *   - id="fuzzy-creature"        -> mountCreature(el)          (10 rules, no slider)
+ *   - id="fuzzy-creature-scaled" -> mountCreature(el, { scaled: true })  (with tier slider)
+ */
+
+const TRAIT_DEFS: Array<{ pred: string; label: string }> = [
+  { pred: 'has-hair', label: 'has-hair' },
+  { pred: 'has-feathers', label: 'has-feathers' },
+  { pred: 'eats-meat', label: 'eats-meat' },
+  { pred: 'has-claws', label: 'has-claws' },
+  { pred: 'has-hooves', label: 'has-hooves' },
+  { pred: 'has-stripes', label: 'has-stripes' },
+  { pred: 'has-long-neck', label: 'has-long-neck' },
+  { pred: 'cannot-fly', label: 'cannot-fly' },
+  { pred: 'is-aquatic', label: 'is-aquatic' },
+  { pred: 'lays-eggs', label: 'lays-eggs' },
+];
+
+export function mountCreature(
+  container: HTMLElement,
+  options?: { scaled?: boolean }
+): void {
+  const scaled = options?.scaled ?? false;
+
+  // --- State ---
+  let currentRules: Rule[] = [...RULES_10];
+  let renderer: TreeRenderer | null = null;
+
+  // --- Build DOM ---
+  const wrap = document.createElement('div');
+  wrap.className = 'fuzzy-creature-wrap';
+
+  // Left: controls
+  const controlsContainer = document.createElement('div');
+  controlsContainer.className = 'fuzzy-creature-controls';
+  wrap.appendChild(controlsContainer);
+
+  // Right: canvas
+  const canvasContainer = document.createElement('div');
+  canvasContainer.className = 'fuzzy-creature-canvas';
+
+  const canvas = document.createElement('canvas');
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.style.display = 'block';
+  canvasContainer.appendChild(canvas);
+  wrap.appendChild(canvasContainer);
+
+  container.appendChild(wrap);
+
+  // --- Renderer ---
+  renderer = new TreeRenderer(canvas);
+
+  function runInference(traits: TraitToggle[]): void {
+    const engine = new FuzzyEngine();
+
+    // Add active traits as facts for entity "creature"
+    for (const trait of traits) {
+      if (trait.active) {
+        engine.addFact({ pred: trait.pred, args: ['creature'], deg: trait.deg });
+      }
+    }
+
+    // Add current rule set
+    for (const rule of currentRules) {
+      engine.addRule(rule);
+    }
+
+    const result = engine.run();
+
+    // Collect all facts from result
+    const facts: Fact[] = [];
+    for (const f of result.facts.values()) {
+      facts.push(f);
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width || 500;
+    const h = rect.height || 400;
+    const layout = layoutTree(facts, currentRules, w, h);
+
+    // Mark fired rules as active
+    const firedSet = new Set(result.firedRules);
+    for (const node of layout.nodes) {
+      if (node.type === 'rule') {
+        node.active = firedSet.has(node.label);
+      }
+    }
+
+    // Activate edges connecting active nodes
+    for (const edge of layout.edges) {
+      const fromNode = layout.nodes.find((n) => n.id === edge.from);
+      const toNode = layout.nodes.find((n) => n.id === edge.to);
+      if (fromNode && toNode) {
+        // An edge is active if the source fact/result is active, or if the rule is active
+        edge.active = fromNode.active || (fromNode.type !== 'rule' && toNode.active);
+      }
+    }
+
+    if (renderer) {
+      renderer.resize();
+      renderer.setLayout(layout);
+      renderer.draw();
+    }
+  }
+
+  // --- WidgetControls ---
+  const initialTraits: TraitToggle[] = TRAIT_DEFS.map((t) => ({
+    pred: t.pred,
+    label: t.label,
+    active: false,
+    deg: 0.8,
+  }));
+
+  const controls = new WidgetControls({
+    container: controlsContainer,
+    traits: initialTraits,
+    onChange: (traits: TraitToggle[]) => {
+      runInference(traits);
+    },
+    showRuleSlider: scaled,
+    onRuleTierChange: scaled
+      ? (tier: number) => {
+          // Only RULES_10 available now; higher tiers added in Task 15
+          switch (tier) {
+            case 0:
+              currentRules = [...RULES_10];
+              break;
+            default:
+              // Future tiers will be imported here
+              currentRules = [...RULES_10];
+              break;
+          }
+          runInference(controls.getTraits());
+        }
+      : undefined,
+  });
+
+  // --- IntersectionObserver for pause/resume ---
+  let isVisible = true;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting && !isVisible) {
+          isVisible = true;
+          renderer?.start();
+        } else if (!entry.isIntersecting && isVisible) {
+          isVisible = false;
+          renderer?.stop();
+        }
+      }
+    },
+    { threshold: 0.1 }
+  );
+  observer.observe(container);
+
+  // Initial render
+  runInference(controls.getTraits());
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    runInference(controls.getTraits());
+  });
+}
