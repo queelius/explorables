@@ -1,4 +1,4 @@
-import type { Rule } from '../types';
+import type { Rule, DegreeExpr } from '../types';
 import { RULES_100 } from './rules-100';
 
 /**
@@ -30,8 +30,8 @@ function sp(
   const degVars = conditions.map((c) => c.degVar).filter(Boolean) as string[];
   const degExpr =
     degVars.length === 1
-      ? (['*', 0.9, degVars[0]] as const)
-      : (['*', 0.9, ['min', ...degVars]] as const);
+      ? ['*', 0.9, degVars[0]] as DegreeExpr
+      : ['*', 0.9, ['min', ...degVars]] as DegreeExpr;
   return {
     name,
     conditions: conditions.map((c) => ({
@@ -52,10 +52,10 @@ function cls(
   priority = 50
 ): Rule {
   const degVars = conditions.map((c) => c.degVar).filter(Boolean) as string[];
-  const degExpr =
+  const degExpr: DegreeExpr =
     degVars.length === 1
-      ? (['*', 0.9, degVars[0]] as const)
-      : (['*', 0.9, ['min', ...degVars]] as const);
+      ? ['*', 0.9, degVars[0]]
+      : ['*', 0.9, ['min', ...degVars]];
   return {
     name,
     conditions: conditions.map((c) => ({
