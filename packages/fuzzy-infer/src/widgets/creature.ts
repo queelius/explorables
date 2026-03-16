@@ -4,6 +4,9 @@ import { FuzzyEngine } from '../engine';
 import { layoutTree } from '../layout';
 import { WidgetControls, type TraitToggle } from '../controls';
 import { RULES_10 } from '../data/rules-10';
+import { RULES_25 } from '../data/rules-25';
+import { RULES_100 } from '../data/rules-100';
+import { RULES_500 } from '../data/rules-500';
 
 /**
  * Full creature builder widget.
@@ -37,7 +40,10 @@ export function mountCreature(
   const scaled = options?.scaled ?? false;
 
   // --- State ---
-  let currentRules: Rule[] = [...RULES_10];
+  const ruleTiers: Rule[][] = scaled
+    ? [RULES_10, RULES_25, RULES_100, RULES_500]
+    : [RULES_10];
+  let currentRules: Rule[] = [...ruleTiers[0]];
   let renderer: TreeRenderer | null = null;
 
   // --- Build DOM ---
@@ -135,16 +141,8 @@ export function mountCreature(
     showRuleSlider: scaled,
     onRuleTierChange: scaled
       ? (tier: number) => {
-          // Only RULES_10 available now; higher tiers added in Task 15
-          switch (tier) {
-            case 0:
-              currentRules = [...RULES_10];
-              break;
-            default:
-              // Future tiers will be imported here
-              currentRules = [...RULES_10];
-              break;
-          }
+          const idx = Math.max(0, Math.min(tier, ruleTiers.length - 1));
+          currentRules = [...ruleTiers[idx]];
           runInference(controls.getTraits());
         }
       : undefined,
