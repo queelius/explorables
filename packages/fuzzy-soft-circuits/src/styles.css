@@ -1,0 +1,183 @@
+#fsc-demo {
+  --fsc-bg: #0f0f1a;
+  --fsc-panel: #1a1a30;
+  --fsc-border: #2a2a4a;
+  --fsc-text: #d0d0e0;
+  --fsc-muted: #606080;
+  --fsc-accent: #3b82f6;
+  --fsc-radius: 8px;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fsc-text);
+  background: var(--fsc-bg);
+  border-radius: var(--fsc-radius);
+  padding: 16px;
+  margin: 2em 0;
+}
+
+#fsc-demo *, #fsc-demo *::before, #fsc-demo *::after {
+  box-sizing: border-box;
+}
+
+/* Layout */
+#fsc-demo .fsc-layout {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  #fsc-demo .fsc-layout { grid-template-columns: 1fr; }
+}
+
+/* Controls */
+#fsc-demo .fsc-controls {
+  background: var(--fsc-panel);
+  border: 1px solid var(--fsc-border);
+  border-radius: var(--fsc-radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: fit-content;
+}
+
+#fsc-demo .fsc-ctrl {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#fsc-demo .fsc-ctrl label {
+  font-size: 0.8rem;
+  color: var(--fsc-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+#fsc-demo .fsc-val {
+  color: var(--fsc-accent);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#fsc-demo select {
+  background: #161628;
+  color: var(--fsc-text);
+  border: 1px solid var(--fsc-border);
+  border-radius: 4px;
+  padding: 5px 7px;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+#fsc-demo input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  background: var(--fsc-border);
+  border-radius: 3px;
+  outline: none;
+  width: 100%;
+}
+
+#fsc-demo input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  background: var(--fsc-accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+#fsc-demo .fsc-btns {
+  display: flex;
+  gap: 6px;
+}
+
+#fsc-demo button {
+  flex: 1;
+  padding: 7px 0;
+  border: 1px solid var(--fsc-border);
+  border-radius: 4px;
+  background: #161628;
+  color: var(--fsc-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#fsc-demo button:hover { background: var(--fsc-border); }
+#fsc-demo button.fsc-active { background: var(--fsc-accent); border-color: var(--fsc-accent); color: #fff; }
+
+#fsc-demo .fsc-stats {
+  font-size: 0.8rem;
+  color: var(--fsc-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--fsc-border);
+  padding-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+#fsc-demo .fsc-stats span { color: var(--fsc-text); font-weight: 500; }
+
+/* Panels */
+#fsc-demo .fsc-viz {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#fsc-demo .fsc-panel {
+  background: var(--fsc-panel);
+  border: 1px solid var(--fsc-border);
+  border-radius: var(--fsc-radius);
+  overflow: hidden;
+}
+
+#fsc-demo .fsc-panel canvas {
+  display: block;
+  width: 100%;
+}
+
+#fsc-demo .fsc-surface canvas { height: 280px; }
+#fsc-demo .fsc-row { display: flex; gap: 10px; }
+#fsc-demo .fsc-row .fsc-panel { flex: 1; }
+#fsc-demo .fsc-row canvas { height: 170px; }
+
+/* Rules */
+#fsc-demo .fsc-rules-panel {
+  background: var(--fsc-panel);
+  border: 1px solid var(--fsc-border);
+  border-radius: var(--fsc-radius);
+  padding: 10px 14px;
+}
+
+#fsc-demo .fsc-rules-panel h4 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--fsc-muted);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#fsc-demo .fsc-muted { color: var(--fsc-muted); font-size: 0.85rem; font-style: italic; }
+
+#fsc-demo .fsc-rule {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 6px;
+  align-items: baseline;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--fsc-border);
+  font-size: 0.85rem;
+}
+
+#fsc-demo .fsc-rule:last-child { border-bottom: none; }
+#fsc-demo .fsc-rule-label { font-weight: 600; color: var(--fsc-accent); white-space: nowrap; }
+#fsc-demo .fsc-rule-strength { font-variant-numeric: tabular-nums; color: var(--fsc-muted); font-size: 0.8rem; }
+#fsc-demo .fsc-rule-body { color: var(--fsc-text); font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.78rem; }

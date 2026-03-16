@@ -1,0 +1,8 @@
+{
+  "name": "@explorables/regex-machines",
+  "version": "1.0.0",
+  "description": "Interactive NFA/DFA visualization — Thompson's construction, subset construction, step-by-step simulation",
+  "deploy": {
+    "slug": "2022-09-12-regex-machines"
+  }
+}

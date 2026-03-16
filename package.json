@@ -1,0 +1,19 @@
+{
+  "name": "explorables",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Interactive explorable explanations for metafunctor.com",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

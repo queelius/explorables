@@ -1,0 +1,8 @@
+{
+  "name": "@explorables/fuzzy-soft-circuits",
+  "version": "1.0.0",
+  "description": "Interactive fuzzy soft circuits — watch a fuzzy logic system discover rules from data via gradient descent",
+  "deploy": {
+    "slug": "2024-10-01-fuzzy-soft-circuits"
+  }
+}

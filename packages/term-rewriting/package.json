@@ -1,0 +1,8 @@
+{
+  "name": "@explorables/term-rewriting",
+  "version": "1.0.0",
+  "description": "Interactive term rewriting: watch pattern matching, bottom-up traversal, and symbolic differentiation step by step",
+  "deploy": {
+    "slug": "2022-10-term-rewriting"
+  }
+}
