@@ -1,0 +1,8 @@
+{
+  "name": "@explorables/fuzzy-infer",
+  "version": "1.0.0",
+  "description": "Interactive fuzzy inference explorable with progressive widgets",
+  "deploy": {
+    "slug": "2026-03-16-fuzzy-inference"
+  }
+}
