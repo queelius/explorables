@@ -1,0 +1,234 @@
+/* ==========================================================================
+   Fuzzy-Infer Explorable — Widget Styles
+   Scoped to .fuzzy-* classes to avoid collisions with host page.
+   ========================================================================== */
+
+/* --- Controls container --- */
+
+.fuzzy-controls {
+  padding: 0.75rem 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+/* --- Trait toggle list --- */
+
+.fuzzy-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fuzzy-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.fuzzy-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fuzzy-toggle.active {
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.fuzzy-toggle-check {
+  accent-color: #4ade80;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.fuzzy-toggle-label {
+  flex: 1;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fuzzy-toggle-deg {
+  font-variant-numeric: tabular-nums;
+  color: #94a3b8;
+  min-width: 3ch;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* --- Degree slider --- */
+
+.fuzzy-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+}
+
+.fuzzy-slider-label {
+  font-size: 13px;
+  color: #94a3b8;
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.fuzzy-slider {
+  flex: 1;
+  height: 4px;
+  accent-color: #4ade80;
+  cursor: pointer;
+}
+
+/* --- Rule tier slider --- */
+
+.fuzzy-tier-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 8px;
+}
+
+.fuzzy-tier-label {
+  font-size: 13px;
+  color: #94a3b8;
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+.fuzzy-tier-slider {
+  flex: 1;
+  height: 4px;
+  accent-color: #f59e0b;
+  cursor: pointer;
+}
+
+/* --- Step controls --- */
+
+.fuzzy-step-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+
+.fuzzy-btn {
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-family: system-ui, -apple-system, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.fuzzy-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.fuzzy-btn:active {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.fuzzy-btn-primary {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+
+.fuzzy-btn-primary:hover {
+  background: rgba(74, 222, 128, 0.25);
+  border-color: rgba(74, 222, 128, 0.5);
+}
+
+.fuzzy-btn-primary:active {
+  background: rgba(74, 222, 128, 0.35);
+}
+
+.fuzzy-iter-label {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Creature builder layout --- */
+
+.fuzzy-creature-wrap {
+  display: flex;
+  gap: 16px;
+  min-height: 420px;
+}
+
+.fuzzy-creature-controls {
+  flex: 0 0 220px;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.fuzzy-creature-canvas {
+  flex: 1;
+  min-width: 0;
+  min-height: 400px;
+  position: relative;
+}
+
+/* --- Fact sidebar (chain demo) --- */
+
+.fuzzy-fact-sidebar {
+  flex: 0 0 200px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  color: #cbd5e1;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-y: auto;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fuzzy-fact-sidebar strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+/* --- Mobile breakpoint: stack creature layout vertically --- */
+
+@media (max-width: 640px) {
+  .fuzzy-creature-wrap {
+    flex-direction: column;
+  }
+
+  .fuzzy-creature-controls {
+    flex: none;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .fuzzy-creature-canvas {
+    min-height: 300px;
+  }
+
+  .fuzzy-fact-sidebar {
+    flex: none;
+    max-height: 200px;
+  }
+}
