@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FuzzyEngine } from '../src/engine';
+import type { Condition } from '../src/types';
 
 // --- Task 2: Fact storage and fuzzy-OR ---
 
@@ -60,5 +61,95 @@ describe('FuzzyEngine — fact storage', () => {
     engine.clearFacts();
     expect(engine.getFacts().size).toBe(0);
     expect(engine.getRules().length).toBe(1);
+  });
+});
+
+// --- Task 3: Pattern matching with variables ---
+
+describe('FuzzyEngine — matchCondition', () => {
+  let engine: FuzzyEngine;
+
+  beforeEach(() => {
+    engine = new FuzzyEngine();
+    engine.addFact({ pred: 'hot', args: ['coffee'], deg: 0.9 });
+    engine.addFact({ pred: 'hot', args: ['tea'], deg: 0.7 });
+    engine.addFact({ pred: 'cold', args: ['ice'], deg: 1.0 });
+  });
+
+  it('matches exact predicate and args', () => {
+    const cond: Condition = { pred: 'hot', args: ['coffee'] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].deg).toBe(0.9);
+  });
+
+  it('returns empty for non-matching predicate', () => {
+    const cond: Condition = { pred: 'warm', args: ['coffee'] };
+    expect(engine.matchCondition(cond, {})).toHaveLength(0);
+  });
+
+  it('binds a variable to matching args', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(2);
+    const bound = results.map((r) => r.bindings['?x']).sort();
+    expect(bound).toEqual(['coffee', 'tea']);
+  });
+
+  it('respects existing binding constraint', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'] };
+    const results = engine.matchCondition(cond, { '?x': 'tea' });
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?x']).toBe('tea');
+    expect(results[0].deg).toBe(0.7);
+  });
+
+  it('binds degree variable via degVar', () => {
+    const cond: Condition = { pred: 'hot', args: ['coffee'], degVar: '?d' };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?d']).toBe(0.9);
+  });
+
+  it('filters by degree constraint > operator', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'], degConstraint: ['>', '?d', 0.8] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?x']).toBe('coffee');
+  });
+
+  it('filters by degree constraint < operator', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'], degConstraint: ['<', '?d', 0.8] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?x']).toBe('tea');
+  });
+
+  it('filters by degree constraint >= operator', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'], degConstraint: ['>=', '?d', 0.9] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?x']).toBe('coffee');
+  });
+
+  it('filters by degree constraint <= operator', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'], degConstraint: ['<=', '?d', 0.7] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?x']).toBe('tea');
+  });
+
+  it('filters by degree constraint == operator', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'], degConstraint: ['==', '?d', 0.9] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?x']).toBe('coffee');
+  });
+
+  it('filters by degree constraint != operator', () => {
+    const cond: Condition = { pred: 'hot', args: ['?x'], degConstraint: ['!=', '?d', 0.9] };
+    const results = engine.matchCondition(cond, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].bindings['?x']).toBe('tea');
   });
 });

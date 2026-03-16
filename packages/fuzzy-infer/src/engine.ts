@@ -46,4 +46,50 @@ export class FuzzyEngine {
     this.facts.clear();
     this.fired.clear();
   }
+
+  // --- Pattern matching (Task 3) ---
+
+  matchCondition(
+    cond: Condition,
+    bindings: Record<string, string | number>
+  ): MatchResult[] {
+    const results: MatchResult[] = [];
+    for (const fact of this.facts.values()) {
+      if (fact.pred !== cond.pred || fact.args.length !== cond.args.length) continue;
+      const b: Record<string, string | number> = { ...bindings };
+      let match = true;
+      for (let i = 0; i < cond.args.length; i++) {
+        const pat = cond.args[i];
+        const val = fact.args[i];
+        if (pat.startsWith('?')) {
+          if (pat in b) {
+            if (b[pat] !== val) { match = false; break; }
+          } else {
+            b[pat] = val;
+          }
+        } else if (pat !== val) {
+          match = false;
+          break;
+        }
+      }
+      if (!match) continue;
+      if (cond.degVar) b[cond.degVar] = fact.deg;
+      if (cond.degConstraint && !evalConstraint(cond.degConstraint, fact.deg)) continue;
+      results.push({ bindings: b, deg: fact.deg });
+    }
+    return results;
+  }
+}
+
+function evalConstraint(dc: [string, string, number], deg: number): boolean {
+  const [op, , threshold] = dc;
+  switch (op) {
+    case '>': return deg > threshold;
+    case '<': return deg < threshold;
+    case '>=': return deg >= threshold;
+    case '<=': return deg <= threshold;
+    case '==': return deg === threshold;
+    case '!=': return deg !== threshold;
+    default: return true;
+  }
 }
