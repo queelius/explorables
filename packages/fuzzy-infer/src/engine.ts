@@ -162,32 +162,35 @@ function evalConstraint(dc: [string, string, number], deg: number): boolean {
   }
 }
 
-function resolveOperand(
-  v: number | string,
-  bindings: Record<string, string | number>
-): number {
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string' && v.startsWith('?') && v in bindings) return Number(bindings[v]);
-  return Number(v);
-}
-
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
-export function evalDegree(
-  expr: DegreeExpr | string,
+/** Resolve a DegreeExpr to a raw number (no clamping on intermediates). */
+function evalDegreeRaw(
+  expr: DegreeExpr,
   bindings: Record<string, string | number>
 ): number {
-  if (typeof expr === 'number') return clamp01(expr);
-  if (typeof expr === 'string') return clamp01(resolveOperand(expr, bindings));
-  const [op, ...operands] = expr;
-  const vals = operands.map((o) => resolveOperand(o, bindings));
-  switch (op) {
-    case '*': return clamp01(vals.reduce((a, b) => a * b, 1));
-    case '+': return clamp01(vals.reduce((a, b) => a + b, 0));
-    case '-': return clamp01(vals.reduce((a, b) => a - b));
-    case '/': return clamp01(vals.reduce((a, b) => a / b));
-    case 'min': return clamp01(Math.min(...vals));
-    case 'max': return clamp01(Math.max(...vals));
-    default: return clamp01(vals[0] ?? 0);
+  if (typeof expr === 'number') return expr;
+  if (typeof expr === 'string') {
+    if (expr.startsWith('?') && expr in bindings) return Number(bindings[expr]);
+    return Number(expr);
   }
+  const [op, ...operands] = expr;
+  const vals = operands.map((o) => evalDegreeRaw(o, bindings));
+  switch (op) {
+    case '*': return vals.reduce((a, b) => a * b, 1);
+    case '+': return vals.reduce((a, b) => a + b, 0);
+    case '-': return vals.reduce((a, b) => a - b);
+    case '/': return vals.reduce((a, b) => a / b);
+    case 'min': return Math.min(...vals);
+    case 'max': return Math.max(...vals);
+    default: return vals[0] ?? 0;
+  }
+}
+
+/** Evaluate a degree expression and clamp result to [0, 1]. */
+export function evalDegree(
+  expr: DegreeExpr,
+  bindings: Record<string, string | number>
+): number {
+  return clamp01(evalDegreeRaw(expr, bindings));
 }

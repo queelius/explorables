@@ -13,7 +13,7 @@ export interface Condition {
   degConstraint?: [string, string, number];
 }
 
-export type DegreeExpr = number | [string, ...(number | string)[]];
+export type DegreeExpr = number | string | [string, ...DegreeExpr[]];
 
 export interface ActionFact {
   pred: string;

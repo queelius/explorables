@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FuzzyEngine, evalDegree } from '../src/engine';
 import type { Condition, Rule } from '../src/types';
+import { RULES_10 } from '../src/data/rules-10';
 
 // --- Task 2: Fact storage and fuzzy-OR ---
 
@@ -189,6 +190,12 @@ describe('evalDegree', () => {
     expect(evalDegree(['max', 0.3, 0.7], {})).toBeCloseTo(0.7);
   });
 
+  it('evaluates nested expression: [*, 0.9, [min, ?d1, ?d2]]', () => {
+    expect(evalDegree(['*', 0.9, ['min', '?d1', '?d2']], { '?d1': 0.8, '?d2': 0.6 })).toBeCloseTo(
+      0.54
+    );
+  });
+
   it('clamps result to [0, 1] — upper', () => {
     expect(evalDegree(['+', 0.8, 0.5], {})).toBe(1);
   });
@@ -356,5 +363,120 @@ describe('FuzzyEngine — forward chaining', () => {
     });
     const result = engine.run(5);
     expect(result.iterations).toBeLessThanOrEqual(5);
+  });
+});
+
+// --- Task 5: Tier 0 animal classification rules ---
+
+describe('RULES_10 — tier 0 rule data', () => {
+  it('exports between 8 and 12 rules', () => {
+    expect(RULES_10.length).toBeGreaterThanOrEqual(8);
+    expect(RULES_10.length).toBeLessThanOrEqual(12);
+  });
+
+  it('every rule has name, conditions, actions, priority', () => {
+    for (const rule of RULES_10) {
+      expect(rule).toHaveProperty('name');
+      expect(rule).toHaveProperty('conditions');
+      expect(rule).toHaveProperty('actions');
+      expect(rule).toHaveProperty('priority');
+      expect(rule.name).toBeTruthy();
+      expect(rule.conditions.length).toBeGreaterThan(0);
+      expect(rule.actions.length).toBeGreaterThan(0);
+      expect(typeof rule.priority).toBe('number');
+    }
+  });
+
+  it('rule names are unique', () => {
+    const names = RULES_10.map((r) => r.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+describe('RULES_10 — integration: animal classification', () => {
+  let engine: FuzzyEngine;
+
+  beforeEach(() => {
+    engine = new FuzzyEngine();
+    for (const rule of RULES_10) engine.addRule(rule);
+  });
+
+  it('classifies zebra from hair + hooves + stripes', () => {
+    engine.addFact({ pred: 'has-hair', args: ['zara'], deg: 1.0 });
+    engine.addFact({ pred: 'has-hooves', args: ['zara'], deg: 0.9 });
+    engine.addFact({ pred: 'has-stripes', args: ['zara'], deg: 0.95 });
+    const result = engine.run();
+    const zebra = result.facts.get('species|zara,zebra');
+    expect(zebra).toBeDefined();
+    expect(zebra!.deg).toBeGreaterThan(0);
+  });
+
+  it('classifies bird from feathers', () => {
+    engine.addFact({ pred: 'has-feathers', args: ['polly'], deg: 0.9 });
+    const result = engine.run();
+    const bird = result.facts.get('is-bird|polly');
+    expect(bird).toBeDefined();
+    expect(bird!.deg).toBeGreaterThan(0);
+  });
+
+  it('classifies carnivore from eats-meat + has-claws', () => {
+    engine.addFact({ pred: 'eats-meat', args: ['rex'], deg: 0.85 });
+    engine.addFact({ pred: 'has-claws', args: ['rex'], deg: 0.9 });
+    const result = engine.run();
+    const carnivore = result.facts.get('is-carnivore|rex');
+    expect(carnivore).toBeDefined();
+    expect(carnivore!.deg).toBeGreaterThan(0);
+  });
+
+  it('classifies tiger from hair + eats-meat + claws + stripes', () => {
+    engine.addFact({ pred: 'has-hair', args: ['tony'], deg: 1.0 });
+    engine.addFact({ pred: 'eats-meat', args: ['tony'], deg: 0.9 });
+    engine.addFact({ pred: 'has-claws', args: ['tony'], deg: 0.85 });
+    engine.addFact({ pred: 'has-stripes', args: ['tony'], deg: 0.95 });
+    const result = engine.run();
+    const tiger = result.facts.get('species|tony,tiger');
+    expect(tiger).toBeDefined();
+    expect(tiger!.deg).toBeGreaterThan(0);
+  });
+
+  it('classifies penguin from feathers + cannot-fly', () => {
+    engine.addFact({ pred: 'has-feathers', args: ['pingu'], deg: 0.9 });
+    engine.addFact({ pred: 'cannot-fly', args: ['pingu'], deg: 1.0 });
+    const result = engine.run();
+    const penguin = result.facts.get('species|pingu,penguin');
+    expect(penguin).toBeDefined();
+    expect(penguin!.deg).toBeGreaterThan(0);
+  });
+
+  it('classifies eagle from feathers + eats-meat + claws', () => {
+    engine.addFact({ pred: 'has-feathers', args: ['eddy'], deg: 0.95 });
+    engine.addFact({ pred: 'eats-meat', args: ['eddy'], deg: 0.9 });
+    engine.addFact({ pred: 'has-claws', args: ['eddy'], deg: 0.85 });
+    const result = engine.run();
+    const eagle = result.facts.get('species|eddy,eagle');
+    expect(eagle).toBeDefined();
+    expect(eagle!.deg).toBeGreaterThan(0);
+  });
+
+  it('propagates degrees through the chain', () => {
+    engine.addFact({ pred: 'has-hair', args: ['zara'], deg: 0.8 });
+    engine.addFact({ pred: 'has-hooves', args: ['zara'], deg: 0.7 });
+    engine.addFact({ pred: 'has-stripes', args: ['zara'], deg: 0.9 });
+    const result = engine.run();
+    const zebra = result.facts.get('species|zara,zebra');
+    expect(zebra).toBeDefined();
+    // Degree should be attenuated from initial values through chain
+    expect(zebra!.deg).toBeLessThan(0.9);
+    expect(zebra!.deg).toBeGreaterThan(0);
+  });
+
+  it('fires intermediate classification rules (mammal, ungulate)', () => {
+    engine.addFact({ pred: 'has-hair', args: ['zara'], deg: 1.0 });
+    engine.addFact({ pred: 'has-hooves', args: ['zara'], deg: 0.9 });
+    engine.addFact({ pred: 'has-stripes', args: ['zara'], deg: 0.95 });
+    const result = engine.run();
+    expect(result.facts.has('is-mammal|zara')).toBe(true);
+    expect(result.facts.has('is-ungulate|zara')).toBe(true);
+    expect(result.firedRules.length).toBeGreaterThan(1);
   });
 });
