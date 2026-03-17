@@ -13,7 +13,14 @@
   background: var(--bg);
   color: var(--text);
   font-family: 'Courier New', Courier, monospace;
-  margin: 0;
+
+  /* Break out of Hugo's article container to go full-width */
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
 }
 
 #mcts-explorable *, #mcts-explorable *::before, #mcts-explorable *::after {
