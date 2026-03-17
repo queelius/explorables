@@ -56,6 +56,14 @@ export class TreeRenderer {
   private prevNodeIds: Set<string> = new Set();
   private tooltip: HTMLDivElement | null = null;
 
+  // Camera: pan and zoom
+  private panX = 0;
+  private panY = 0;
+  private zoom = 1;
+  private isPanning = false;
+  private panStartX = 0;
+  private panStartY = 0;
+
   /** Set from outside to receive click events on nodes. */
   onClick?: (nodeId: string) => void;
 
@@ -66,6 +74,24 @@ export class TreeRenderer {
     this.ctx = ctx;
     this.resize();
     this.setupEvents();
+  }
+
+  /** Reset camera to default view. */
+  resetCamera(): void {
+    this.panX = 0;
+    this.panY = 0;
+    this.zoom = 1;
+  }
+
+  /** Convert client (mouse) coordinates to canvas world coordinates. */
+  private clientToWorld(clientX: number, clientY: number): { x: number; y: number } {
+    const rect = this.canvas.getBoundingClientRect();
+    const cx = clientX - rect.left;
+    const cy = clientY - rect.top;
+    return {
+      x: (cx - this.panX) / this.zoom,
+      y: (cy - this.panY) / this.zoom,
+    };
   }
 
   // --- Public API ---
@@ -145,9 +171,7 @@ export class TreeRenderer {
 
   hitTest(clientX: number, clientY: number): NodePosition | null {
     if (!this.layout) return null;
-    const rect = this.canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const { x, y } = this.clientToWorld(clientX, clientY);
 
     // Search in reverse so topmost (last-drawn) nodes are hit first
     for (let i = this.layout.nodes.length - 1; i >= 0; i--) {
@@ -168,6 +192,9 @@ export class TreeRenderer {
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.removeEventListener('click', this.handleClick);
+    this.canvas.removeEventListener('wheel', this.handleWheel);
+    this.canvas.removeEventListener('mousedown', this.handleMouseDown);
+    this.canvas.removeEventListener('mouseup', this.handleMouseUp);
   }
 
   // --- Drawing ---
@@ -180,8 +207,14 @@ export class TreeRenderer {
     const w = rect.width;
     const h = rect.height;
 
-    this.ctx.clearRect(0, 0, w, h);
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.clearRect(0, 0, w, h);
     this.updateAnimations();
+
+    // Apply camera transform
+    ctx.translate(this.panX, this.panY);
+    ctx.scale(this.zoom, this.zoom);
 
     // Draw edges first (below everything)
     for (const edge of layout.edges) {
@@ -206,6 +239,8 @@ export class TreeRenderer {
         this.nodeAnims.delete(id);
       }
     }
+
+    ctx.restore();
   }
 
   // --- Animation updates ---
@@ -437,16 +472,61 @@ export class TreeRenderer {
     this.canvas.addEventListener('mousemove', this.handleMouseMove);
     this.canvas.addEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.addEventListener('click', this.handleClick);
+    this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
+    this.canvas.addEventListener('mousedown', this.handleMouseDown);
+    this.canvas.addEventListener('mouseup', this.handleMouseUp);
   }
 
+  private handleWheel = (e: WheelEvent): void => {
+    e.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    const newZoom = Math.max(0.3, Math.min(5, this.zoom * factor));
+
+    // Zoom centered on cursor
+    this.panX = cx - (cx - this.panX) * (newZoom / this.zoom);
+    this.panY = cy - (cy - this.panY) * (newZoom / this.zoom);
+    this.zoom = newZoom;
+
+    if (!this.running) this.draw();
+  };
+
+  private handleMouseDown = (e: MouseEvent): void => {
+    // Middle-click or left-click on empty space starts pan
+    if (e.button === 1 || (e.button === 0 && !this.hitTest(e.clientX, e.clientY))) {
+      this.isPanning = true;
+      this.panStartX = e.clientX - this.panX;
+      this.panStartY = e.clientY - this.panY;
+      this.canvas.style.cursor = 'grabbing';
+      e.preventDefault();
+    }
+  };
+
+  private handleMouseUp = (_e: MouseEvent): void => {
+    if (this.isPanning) {
+      this.isPanning = false;
+      this.canvas.style.cursor = 'default';
+    }
+  };
+
   private handleMouseMove = (e: MouseEvent): void => {
+    if (this.isPanning) {
+      this.panX = e.clientX - this.panStartX;
+      this.panY = e.clientY - this.panStartY;
+      if (!this.running) this.draw();
+      return;
+    }
+
     const node = this.hitTest(e.clientX, e.clientY);
     if (node) {
       this.showTooltip(node, e.clientX, e.clientY);
       this.canvas.style.cursor = 'pointer';
     } else {
       this.removeTooltip();
-      this.canvas.style.cursor = 'default';
+      this.canvas.style.cursor = 'grab';
     }
   };
 
