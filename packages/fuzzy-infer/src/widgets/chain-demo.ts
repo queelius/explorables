@@ -163,8 +163,7 @@ export function mountChainDemo(container: HTMLElement): void {
 
     const rect = canvas.getBoundingClientRect();
     const w = rect.width || 400;
-    const h = 320;
-    const layout = layoutTree(facts, CHAIN_RULES, w, h);
+    const layout = layoutTree(facts, CHAIN_RULES, w);
 
     // Mark fired rules as active
     const firedSet = new Set(firedRules ?? []);

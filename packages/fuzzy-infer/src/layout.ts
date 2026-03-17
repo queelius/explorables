@@ -10,6 +10,11 @@ import type { Fact, Rule, TreeLayout, NodePosition, EdgePosition } from './types
  *   Layer 3 — species: final species identifications
  *
  * The layer assignment is derived from rule structure, not hardcoded per predicate.
+ *
+ * After inference, only the ACTIVE subgraph is shown:
+ *   - All trait toggles (greyed out if inactive, green if active)
+ *   - Only rules that actually FIRED
+ *   - Only classifications/species that were actually INFERRED
  */
 
 /** Predicates produced by rule actions that are species identifications. */
@@ -27,7 +32,7 @@ function isSpeciesPred(pred: string): boolean {
  * This avoids hardcoding: a predicate like `is-aquatic` that appears only as
  * a condition (never produced by a rule) is correctly classified as a trait.
  */
-function derivePredicateCategories(rules: Rule[]): {
+export function derivePredicateCategories(rules: Rule[]): {
   traits: Set<string>;
   classifications: Set<string>;
 } {
@@ -113,29 +118,85 @@ function distributeHorizontally(
   }));
 }
 
+/**
+ * Options for layoutTree to filter the graph to the active subgraph.
+ * When provided, only fired rules and their connected nodes are shown
+ * (plus all trait toggles for completeness).
+ */
+export interface LayoutOptions {
+  /** Names of rules that fired during inference. */
+  firedRules?: string[];
+}
+
 export function layoutTree(
   facts: Fact[],
   rules: Rule[],
   width: number,
-  height: number
+  options?: LayoutOptions
 ): TreeLayout {
   const nodes: NodePosition[] = [];
   const edges: EdgePosition[] = [];
 
   // Derive categories from rule structure
   const { traits: traitPreds, classifications: classPreds } = derivePredicateCategories(rules);
-  const speciesNames = collectSpeciesNames(rules);
 
   const factDegs = buildFactDegrees(facts);
 
+  // Determine which rules fired (unique set of names)
+  const firedRulesProvided = options?.firedRules !== undefined;
+  const firedSet = new Set(options?.firedRules ?? []);
+
+  // When firedRules is explicitly provided (even if empty), filter to fired rules only.
+  // When not provided, show all rules (backward-compat for simple widgets).
+  const activeRules = firedRulesProvided
+    ? rules.filter((r) => firedSet.has(r.name))
+    : rules;
+
+  // Collect classification preds and species names that were ACTUALLY produced
+  // by the active rules (not the entire rule set)
+  const activeClassPreds = new Set<string>();
+  const activeSpeciesNames = new Set<string>();
+  for (const rule of activeRules) {
+    for (const action of rule.actions) {
+      if (action.type !== 'add') continue;
+      if (isSpeciesPred(action.fact.pred)) {
+        const name = action.fact.args[1];
+        if (name && !name.startsWith('?')) {
+          activeSpeciesNames.add(name);
+        }
+      } else if (classPreds.has(action.fact.pred)) {
+        activeClassPreds.add(action.fact.pred);
+      }
+    }
+  }
+
+  // Count non-empty layers for dynamic height
+  const hasRules = activeRules.length > 0;
+  const hasClassifications = activeClassPreds.size > 0;
+  const hasSpecies = activeSpeciesNames.size > 0;
+  // Layer 0 (traits) always present; count additional layers
+  let layerCount = 1;
+  if (hasRules) layerCount++;
+  if (hasClassifications) layerCount++;
+  if (hasSpecies) layerCount++;
+
   // Layout constants
   const padding = width * 0.05;
-  const layerCount = 4;
-  const layerSpacing = height / (layerCount + 1);
+  const layerSpacing = 100;
+  const height = padding * 2 + layerCount * layerSpacing;
 
-  // --- Layer 0: trait nodes ---
+  // Assign y-positions sequentially based on which layers exist
+  let nextLayerIdx = 0;
+  const layerY = (layerIdx: number): number => padding + layerIdx * layerSpacing + layerSpacing / 2;
+
+  const traitY = layerY(nextLayerIdx++);
+  const ruleY = hasRules ? layerY(nextLayerIdx++) : 0;
+  const classY = hasClassifications ? layerY(nextLayerIdx++) : 0;
+  const speciesY = hasSpecies ? layerY(nextLayerIdx++) : 0;
+
+  // --- Layer 0: trait nodes (always show all) ---
   const traitList = [...traitPreds].sort();
-  const traitPositions = distributeHorizontally(traitList.length, layerSpacing, width, padding);
+  const traitPositions = distributeHorizontally(traitList.length, traitY, width, padding);
   const traitNodeIds = new Map<string, string>();
   for (let i = 0; i < traitList.length; i++) {
     const pred = traitList[i];
@@ -153,9 +214,9 @@ export function layoutTree(
     });
   }
 
-  // --- Layer 1: rule nodes ---
-  const ruleList = [...rules].sort((a, b) => a.name.localeCompare(b.name));
-  const rulePositions = distributeHorizontally(ruleList.length, layerSpacing * 2, width, padding);
+  // --- Layer 1: rule nodes (only fired rules) ---
+  const ruleList = [...activeRules].sort((a, b) => a.name.localeCompare(b.name));
+  const rulePositions = distributeHorizontally(ruleList.length, ruleY, width, padding);
   const ruleNodeIds = new Map<string, string>();
   for (let i = 0; i < ruleList.length; i++) {
     const rule = ruleList[i];
@@ -169,23 +230,19 @@ export function layoutTree(
       type: 'rule',
       label: rule.name,
       deg: 0,
-      active: false,
+      active: firedSet.has(rule.name),
     });
   }
 
-  // --- Layer 2: classification nodes ---
-  const classList = [...classPreds].sort();
-  const classPositions = distributeHorizontally(
-    classList.length,
-    layerSpacing * 3,
-    width,
-    padding
-  );
+  // --- Layer 2: classification nodes (only inferred) ---
+  const classList = [...activeClassPreds].sort();
+  const classPositions = distributeHorizontally(classList.length, classY, width, padding);
   const classNodeIds = new Map<string, string>();
   for (let i = 0; i < classList.length; i++) {
     const pred = classList[i];
     const id = `class:${pred}`;
     classNodeIds.set(pred, id);
+    const deg = factDegs.get(pred) ?? 0;
     nodes.push({
       id,
       x: classPositions[i].x,
@@ -193,22 +250,19 @@ export function layoutTree(
       layer: 2,
       type: 'result',
       label: pred,
-      deg: 0,
-      active: false,
+      deg,
+      active: deg > 0,
     });
   }
 
-  // --- Layer 3: species nodes ---
-  const speciesList = [...speciesNames].sort();
-  const speciesPositions = distributeHorizontally(
-    speciesList.length,
-    layerSpacing * 4,
-    width,
-    padding
-  );
+  // --- Layer 3: species nodes (only inferred) ---
+  const speciesList = [...activeSpeciesNames].sort();
+  const speciesPositions = distributeHorizontally(speciesList.length, speciesY, width, padding);
   for (let i = 0; i < speciesList.length; i++) {
     const name = speciesList[i];
     const id = `species:${name}`;
+    // Look for a species fact with this name
+    const specDeg = findSpeciesDegree(facts, name);
     nodes.push({
       id,
       x: speciesPositions[i].x,
@@ -216,21 +270,23 @@ export function layoutTree(
       layer: 3,
       type: 'result',
       label: name,
-      deg: 0,
-      active: false,
+      deg: specDeg,
+      active: specDeg > 0,
     });
   }
 
-  // --- Build edges ---
-  for (const rule of rules) {
-    const ruleId = ruleNodeIds.get(rule.name)!;
+  // --- Build edges (only for rules in the active set) ---
+  for (const rule of activeRules) {
+    const ruleId = ruleNodeIds.get(rule.name);
+    if (!ruleId) continue;
 
     // Edges from conditions to rule
     for (const cond of rule.conditions) {
       // Condition might reference a trait (layer 0) or a classification (layer 2)
       const sourceId = traitNodeIds.get(cond.pred) ?? classNodeIds.get(cond.pred);
       if (sourceId) {
-        edges.push({ from: sourceId, to: ruleId, active: false });
+        const fromNode = nodes.find((n) => n.id === sourceId);
+        edges.push({ from: sourceId, to: ruleId, active: !!(fromNode && fromNode.active) });
       }
     }
 
@@ -238,20 +294,31 @@ export function layoutTree(
     for (const action of rule.actions) {
       if (action.type !== 'add') continue;
       const pred = action.fact.pred;
-      if (classPreds.has(pred)) {
+      if (activeClassPreds.has(pred)) {
         const targetId = classNodeIds.get(pred);
         if (targetId) {
-          edges.push({ from: ruleId, to: targetId, active: false });
+          edges.push({ from: ruleId, to: targetId, active: firedSet.has(rule.name) });
         }
       } else if (isSpeciesPred(pred)) {
         const speciesName = action.fact.args[1];
-        if (speciesName && !speciesName.startsWith('?')) {
+        if (speciesName && !speciesName.startsWith('?') && activeSpeciesNames.has(speciesName)) {
           const targetId = `species:${speciesName}`;
-          edges.push({ from: ruleId, to: targetId, active: false });
+          edges.push({ from: ruleId, to: targetId, active: firedSet.has(rule.name) });
         }
       }
     }
   }
 
   return { nodes, edges, width, height };
+}
+
+/** Find the degree of a species fact by species name. */
+function findSpeciesDegree(facts: Fact[], speciesName: string): number {
+  let maxDeg = 0;
+  for (const f of facts) {
+    if (f.pred === 'species' && f.args.includes(speciesName)) {
+      if (f.deg > maxDeg) maxDeg = f.deg;
+    }
+  }
+  return maxDeg;
 }

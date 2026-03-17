@@ -103,8 +103,7 @@ export function mountRuleDemo(container: HTMLElement): void {
 
     const rect = canvas.getBoundingClientRect();
     const w = rect.width || 400;
-    const h = 280;
-    const layout = layoutTree(facts, [DEMO_RULE], w, h);
+    const layout = layoutTree(facts, [DEMO_RULE], w);
 
     // Mark fired rules as active
     const firedSet = new Set(result.firedRules);

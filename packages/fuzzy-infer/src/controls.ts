@@ -40,6 +40,13 @@ export class WidgetControls {
     return this.traits.map((t) => ({ ...t }));
   }
 
+  /** Replace the trait list (e.g. when the tier changes). Re-renders controls. */
+  setTraits(traits: TraitToggle[]): void {
+    this.traits = traits.map((t) => ({ ...t }));
+    this.selectedIndex = -1;
+    this.render();
+  }
+
   render(): void {
     const container = this.config.container;
     clearChildren(container);
@@ -78,7 +85,7 @@ export class WidgetControls {
 
     for (let i = 0; i < this.traits.length; i++) {
       const trait = this.traits[i];
-      const row = createElement('div', 'fuzzy-toggle');
+      const row = createElement('div', trait.active ? 'fuzzy-toggle active' : 'fuzzy-toggle');
 
       // Checkbox
       const check = document.createElement('input');

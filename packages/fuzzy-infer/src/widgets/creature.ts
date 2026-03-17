@@ -1,7 +1,7 @@
 import type { Fact, Rule } from '../types';
 import { TreeRenderer } from '../renderer';
 import { FuzzyEngine } from '../engine';
-import { layoutTree } from '../layout';
+import { layoutTree, derivePredicateCategories } from '../layout';
 import { WidgetControls, type TraitToggle } from '../controls';
 import { RULES_10 } from '../data/rules-10';
 import { RULES_25 } from '../data/rules-25';
@@ -15,23 +15,37 @@ import { RULES_500 } from '../data/rules-500';
  * Trait toggles via WidgetControls. On trait change: create fresh
  * FuzzyEngine, add active traits, add rules, run, update layout.
  *
+ * Trait toggles are derived dynamically from the current rule set using
+ * `derivePredicateCategories`: any predicate that appears in conditions
+ * but is never produced by any rule action is a user-toggleable trait.
+ * When the tier slider changes, the toggle list grows with the rule set.
+ *
  * Mounted twice in the post:
  *   - id="fuzzy-creature"        -> mountCreature(el)          (10 rules, no slider)
  *   - id="fuzzy-creature-scaled" -> mountCreature(el, { scaled: true })  (with tier slider)
  */
 
-const TRAIT_DEFS: Array<{ pred: string; label: string }> = [
-  { pred: 'has-hair', label: 'has-hair' },
-  { pred: 'has-feathers', label: 'has-feathers' },
-  { pred: 'eats-meat', label: 'eats-meat' },
-  { pred: 'has-claws', label: 'has-claws' },
-  { pred: 'has-hooves', label: 'has-hooves' },
-  { pred: 'has-stripes', label: 'has-stripes' },
-  { pred: 'has-long-neck', label: 'has-long-neck' },
-  { pred: 'cannot-fly', label: 'cannot-fly' },
-  { pred: 'is-aquatic', label: 'is-aquatic' },
-  { pred: 'lays-eggs', label: 'lays-eggs' },
-];
+/**
+ * Build trait toggles from the current rule set, preserving active states
+ * from the previous toggle list.
+ */
+function buildTraitToggles(rules: Rule[], previous: TraitToggle[]): TraitToggle[] {
+  const { traits } = derivePredicateCategories(rules);
+  const prevMap = new Map<string, TraitToggle>();
+  for (const t of previous) {
+    prevMap.set(t.pred, t);
+  }
+  const sorted = [...traits].sort();
+  return sorted.map((pred) => {
+    const prev = prevMap.get(pred);
+    return {
+      pred,
+      label: pred,
+      active: prev?.active ?? false,
+      deg: prev?.deg ?? 0.8,
+    };
+  });
+}
 
 export function mountCreature(
   container: HTMLElement,
@@ -61,7 +75,6 @@ export function mountCreature(
 
   const canvas = document.createElement('canvas');
   canvas.style.width = '100%';
-  canvas.style.height = '100%';
   canvas.style.display = 'block';
   canvasContainer.appendChild(canvas);
   wrap.appendChild(canvasContainer);
@@ -96,26 +109,9 @@ export function mountCreature(
 
     const rect = canvas.getBoundingClientRect();
     const w = rect.width || 500;
-    const h = rect.height || 400;
-    const layout = layoutTree(facts, currentRules, w, h);
-
-    // Mark fired rules as active
-    const firedSet = new Set(result.firedRules);
-    for (const node of layout.nodes) {
-      if (node.type === 'rule') {
-        node.active = firedSet.has(node.label);
-      }
-    }
-
-    // Activate edges connecting active nodes
-    for (const edge of layout.edges) {
-      const fromNode = layout.nodes.find((n) => n.id === edge.from);
-      const toNode = layout.nodes.find((n) => n.id === edge.to);
-      if (fromNode && toNode) {
-        // An edge is active if the source fact/result is active, or if the rule is active
-        edge.active = fromNode.active || (fromNode.type !== 'rule' && toNode.active);
-      }
-    }
+    const layout = layoutTree(facts, currentRules, w, {
+      firedRules: result.firedRules,
+    });
 
     if (renderer) {
       renderer.resize();
@@ -125,12 +121,7 @@ export function mountCreature(
   }
 
   // --- WidgetControls ---
-  const initialTraits: TraitToggle[] = TRAIT_DEFS.map((t) => ({
-    pred: t.pred,
-    label: t.label,
-    active: false,
-    deg: 0.8,
-  }));
+  const initialTraits = buildTraitToggles(currentRules, []);
 
   const controls = new WidgetControls({
     container: controlsContainer,
@@ -143,6 +134,9 @@ export function mountCreature(
       ? (tier: number) => {
           const idx = Math.max(0, Math.min(tier, ruleTiers.length - 1));
           currentRules = [...ruleTiers[idx]];
+          // Rebuild trait toggles from the new rule set, preserving active states
+          const updatedTraits = buildTraitToggles(currentRules, controls.getTraits());
+          controls.setTraits(updatedTraits);
           runInference(controls.getTraits());
         }
       : undefined,

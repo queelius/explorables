@@ -102,6 +102,9 @@ export class TreeRenderer {
 
     this.prevNodeIds = newIds;
     this.layout = layout;
+
+    // Adapt canvas CSS height to match the layout's computed height
+    this.canvas.style.height = `${layout.height}px`;
   }
 
   resize(): void {
