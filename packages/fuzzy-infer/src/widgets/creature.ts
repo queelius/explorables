@@ -29,6 +29,10 @@ import { RULES_500 } from '../data/rules-500';
  * Build trait toggles from the current rule set, preserving active states
  * from the previous toggle list.
  */
+function roundDeg(v: number): number {
+  return Math.round(v * 20) / 20; // round to nearest 0.05
+}
+
 function buildTraitToggles(rules: Rule[], previous: TraitToggle[]): TraitToggle[] {
   const { traits } = derivePredicateCategories(rules);
   const prevMap = new Map<string, TraitToggle>();
@@ -42,7 +46,7 @@ function buildTraitToggles(rules: Rule[], previous: TraitToggle[]): TraitToggle[
       pred,
       label: pred,
       active: prev?.active ?? false,
-      deg: prev?.deg ?? 1.0,
+      deg: prev?.deg ?? roundDeg(0.65 + Math.random() * 0.35),
     };
   });
 }
