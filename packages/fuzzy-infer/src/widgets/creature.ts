@@ -42,7 +42,7 @@ function buildTraitToggles(rules: Rule[], previous: TraitToggle[]): TraitToggle[
       pred,
       label: pred,
       active: prev?.active ?? false,
-      deg: prev?.deg ?? 0.8,
+      deg: prev?.deg ?? 1.0,
     };
   });
 }

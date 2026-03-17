@@ -242,11 +242,11 @@ export class TreeRenderer {
     ctx.lineTo(to.x, to.y);
 
     if (edge.active) {
-      ctx.strokeStyle = '#4ade80';
+      ctx.strokeStyle = '#16a34a';
       ctx.lineWidth = 2;
       ctx.setLineDash([]);
     } else {
-      ctx.strokeStyle = '#555';
+      ctx.strokeStyle = '#d1d5db';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
     }
@@ -313,30 +313,24 @@ export class TreeRenderer {
     const ctx = this.ctx;
     const r = NODE_RADIUS;
 
-    // Fill: grey (inactive) to green (active), interpolated by degree
+    // Fill: light grey (inactive) to green (active), interpolated by degree
     const fill = node.active
-      ? lerpColor(100, 100, 100, 74, 222, 128, node.deg)
-      : 'rgb(70,70,70)';
+      ? lerpColor(229, 231, 235, 187, 247, 208, node.deg)
+      : '#e5e7eb';
 
     // Rounded rect
     this.roundedRect(node.x - r, node.y - r * 0.7, r * 2, r * 1.4, 6);
     ctx.fillStyle = fill;
     ctx.fill();
 
-    // Inner glow when active
-    if (node.active) {
-      ctx.save();
-      ctx.shadowColor = '#4ade80';
-      ctx.shadowBlur = 10;
-      ctx.strokeStyle = 'rgba(74, 222, 128, 0.4)';
-      ctx.lineWidth = 1;
-      this.roundedRect(node.x - r, node.y - r * 0.7, r * 2, r * 1.4, 6);
-      ctx.stroke();
-      ctx.restore();
-    }
+    // Border
+    ctx.strokeStyle = node.active ? '#16a34a' : '#d1d5db';
+    ctx.lineWidth = node.active ? 2 : 1;
+    this.roundedRect(node.x - r, node.y - r * 0.7, r * 2, r * 1.4, 6);
+    ctx.stroke();
 
     // Label
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = node.active ? '#14532d' : '#6b7280';
     ctx.font = '10px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -345,7 +339,7 @@ export class TreeRenderer {
 
     // Degree text
     if (node.active) {
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillStyle = '#15803d';
       ctx.font = '8px system-ui, sans-serif';
       ctx.fillText(node.deg.toFixed(2), node.x, node.y + 8);
     }
@@ -363,20 +357,22 @@ export class TreeRenderer {
     ctx.lineTo(node.x - r, node.y);
     ctx.closePath();
 
-    ctx.fillStyle = node.active ? '#f59e0b' : 'rgb(80,70,50)';
+    ctx.fillStyle = node.active ? '#fef3c7' : '#f3f4f6';
     ctx.fill();
 
-    // Amber glow when firing
-    if (node.active) {
-      ctx.save();
-      ctx.shadowColor = '#f59e0b';
-      ctx.shadowBlur = 12;
-      ctx.stroke();
-      ctx.restore();
-    }
+    // Border
+    ctx.strokeStyle = node.active ? '#d97706' : '#d1d5db';
+    ctx.lineWidth = node.active ? 2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(node.x, node.y - r);
+    ctx.lineTo(node.x + r, node.y);
+    ctx.lineTo(node.x, node.y + r);
+    ctx.lineTo(node.x - r, node.y);
+    ctx.closePath();
+    ctx.stroke();
 
     // Label
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = node.active ? '#92400e' : '#6b7280';
     ctx.font = '8px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -391,20 +387,20 @@ export class TreeRenderer {
     // Larger rounded rect
     this.roundedRect(node.x - r, node.y - r * 0.6, r * 2, r * 1.2, 8);
     ctx.fillStyle = node.active
-      ? lerpColor(60, 60, 80, 59, 130, 246, node.deg)
-      : 'rgb(50,50,65)';
+      ? lerpColor(219, 234, 254, 191, 219, 254, node.deg)
+      : '#f3f4f6';
     ctx.fill();
 
     // Border thickness scales with confidence/degree
     const borderWidth = node.active ? 1 + node.deg * 3 : 1;
-    ctx.strokeStyle = node.active ? '#3b82f6' : '#444';
+    ctx.strokeStyle = node.active ? '#2563eb' : '#d1d5db';
     ctx.lineWidth = borderWidth;
     this.roundedRect(node.x - r, node.y - r * 0.6, r * 2, r * 1.2, 8);
     ctx.stroke();
 
     // Label
-    ctx.fillStyle = '#fff';
-    ctx.font = '11px system-ui, sans-serif';
+    ctx.fillStyle = node.active ? '#1e3a5f' : '#6b7280';
+    ctx.font = 'bold 11px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const label = truncateLabel(node.label, 12);
@@ -412,7 +408,7 @@ export class TreeRenderer {
 
     // Degree text
     if (node.active) {
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillStyle = '#1d4ed8';
       ctx.font = '9px system-ui, sans-serif';
       ctx.fillText(node.deg.toFixed(2), node.x, node.y + 10);
     }

@@ -1,6 +1,7 @@
 /* ==========================================================================
    Fuzzy-Infer Explorable — Widget Styles
    Scoped to .fuzzy-* classes to avoid collisions with host page.
+   Designed for LIGHT backgrounds (ananke theme).
    ========================================================================== */
 
 /* --- Controls container --- */
@@ -9,7 +10,7 @@
   padding: 0.75rem 0;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 14px;
-  color: #e2e8f0;
+  color: #1e293b;
 }
 
 /* --- Trait toggle list --- */
@@ -32,15 +33,15 @@
 }
 
 .fuzzy-toggle:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .fuzzy-toggle.active {
-  background: rgba(74, 222, 128, 0.1);
+  background: rgba(22, 163, 74, 0.08);
 }
 
 .fuzzy-toggle-check {
-  accent-color: #4ade80;
+  accent-color: #16a34a;
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -54,11 +55,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #334155;
+}
+
+.fuzzy-toggle.active .fuzzy-toggle-label {
+  color: #14532d;
+  font-weight: 500;
 }
 
 .fuzzy-toggle-deg {
   font-variant-numeric: tabular-nums;
-  color: #94a3b8;
+  color: #64748b;
   min-width: 3ch;
   text-align: right;
   flex-shrink: 0;
@@ -75,7 +82,7 @@
 
 .fuzzy-slider-label {
   font-size: 13px;
-  color: #94a3b8;
+  color: #475569;
   white-space: nowrap;
   min-width: 100px;
 }
@@ -83,7 +90,7 @@
 .fuzzy-slider {
   flex: 1;
   height: 4px;
-  accent-color: #4ade80;
+  accent-color: #16a34a;
   cursor: pointer;
 }
 
@@ -94,13 +101,14 @@
   align-items: center;
   gap: 10px;
   padding: 10px 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-top: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 8px;
 }
 
 .fuzzy-tier-label {
   font-size: 13px;
-  color: #94a3b8;
+  color: #92400e;
+  font-weight: 500;
   white-space: nowrap;
   min-width: 140px;
 }
@@ -108,7 +116,7 @@
 .fuzzy-tier-slider {
   flex: 1;
   height: 4px;
-  accent-color: #f59e0b;
+  accent-color: #d97706;
   cursor: pointer;
 }
 
@@ -124,10 +132,10 @@
 
 .fuzzy-btn {
   padding: 6px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid #cbd5e1;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
   font-size: 13px;
   font-family: system-ui, -apple-system, sans-serif;
   cursor: pointer;
@@ -136,32 +144,32 @@
 }
 
 .fuzzy-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: #f1f5f9;
+  border-color: #94a3b8;
 }
 
 .fuzzy-btn:active {
-  background: rgba(255, 255, 255, 0.18);
+  background: #e2e8f0;
 }
 
 .fuzzy-btn-primary {
-  background: rgba(74, 222, 128, 0.15);
-  border-color: rgba(74, 222, 128, 0.3);
-  color: #4ade80;
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
 }
 
 .fuzzy-btn-primary:hover {
-  background: rgba(74, 222, 128, 0.25);
-  border-color: rgba(74, 222, 128, 0.5);
+  background: #bbf7d0;
+  border-color: #4ade80;
 }
 
 .fuzzy-btn-primary:active {
-  background: rgba(74, 222, 128, 0.35);
+  background: #a7f3d0;
 }
 
 .fuzzy-iter-label {
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
   margin-left: 8px;
   font-variant-numeric: tabular-nums;
 }
@@ -193,11 +201,11 @@
   flex: 0 0 200px;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 12px;
-  color: #cbd5e1;
+  color: #475569;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: #f8fafc;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid #e2e8f0;
   overflow-y: auto;
   max-height: 320px;
   display: flex;
@@ -208,7 +216,7 @@
 .fuzzy-fact-sidebar strong {
   display: block;
   margin-bottom: 6px;
-  color: #e2e8f0;
+  color: #1e293b;
   font-size: 13px;
 }
 
