@@ -148,15 +148,31 @@ describe('layoutTree — active subgraph filtering', () => {
     expect(speciesNodes[0].active).toBe(true);
   });
 
-  it('shows all trait nodes regardless of firing', () => {
+  it('shows only relevant trait nodes when firedRules is provided', () => {
     const facts: Fact[] = [{ pred: 'has-hair', args: ['max'], deg: 0.9 }];
     const layout = layoutTree(facts, rules, 800, { firedRules: ['mammal-rule'] });
     const traitNodes = layout.nodes.filter((n) => n.layer === 0);
-    // All trait predicates from rules should still appear
     const labels = traitNodes.map((n) => n.label);
+    // has-hair: active (in facts) AND condition of fired mammal-rule
     expect(labels).toContain('has-hair');
-    expect(labels).toContain('has-feathers');
-    expect(labels).toContain('has-stripes');
+    // has-feathers: condition of bird-rule (not fired), not in facts -> excluded
+    expect(labels).not.toContain('has-feathers');
+    // has-stripes: condition of zebra-rule (not fired), not in facts -> excluded
+    expect(labels).not.toContain('has-stripes');
+  });
+
+  it('shows trait nodes that are conditions of fired rules even without matching facts', () => {
+    // zebra-rule conditions: is-mammal (classification), has-stripes (trait)
+    // has-stripes is a trait condition of a fired rule, so it should appear even without a fact
+    const facts: Fact[] = [{ pred: 'has-hair', args: ['max'], deg: 0.9 }];
+    const layout = layoutTree(facts, rules, 800, {
+      firedRules: ['mammal-rule', 'zebra-rule'],
+    });
+    const traitNodes = layout.nodes.filter((n) => n.layer === 0);
+    const labels = traitNodes.map((n) => n.label);
+    expect(labels).toContain('has-hair'); // active fact
+    expect(labels).toContain('has-stripes'); // condition of fired zebra-rule
+    expect(labels).not.toContain('has-feathers'); // bird-rule not fired, no fact
   });
 
   it('edge endpoints all reference valid node ids', () => {
@@ -169,8 +185,16 @@ describe('layoutTree — active subgraph filtering', () => {
     }
   });
 
-  it('empty firedRules produces only trait nodes', () => {
+  it('empty firedRules and no facts produces empty graph', () => {
     const facts: Fact[] = [];
+    const layout = layoutTree(facts, rules, 800, { firedRules: [] });
+    // No rules fired, no active facts -> nothing to show
+    expect(layout.nodes.length).toBe(0);
+    expect(layout.edges.length).toBe(0);
+  });
+
+  it('empty firedRules with active facts shows those traits', () => {
+    const facts: Fact[] = [{ pred: 'has-hair', args: ['max'], deg: 0.9 }];
     const layout = layoutTree(facts, rules, 800, { firedRules: [] });
     // No rules fired -> no rule/class/species nodes
     const ruleNodes = layout.nodes.filter((n) => n.layer === 1);
@@ -179,9 +203,11 @@ describe('layoutTree — active subgraph filtering', () => {
     expect(ruleNodes.length).toBe(0);
     expect(classNodes.length).toBe(0);
     expect(speciesNodes.length).toBe(0);
-    // But traits are always present
+    // Active trait facts still show
     const traitNodes = layout.nodes.filter((n) => n.layer === 0);
-    expect(traitNodes.length).toBeGreaterThan(0);
+    expect(traitNodes.length).toBe(1);
+    expect(traitNodes[0].label).toBe('has-hair');
+    expect(traitNodes[0].active).toBe(true);
   });
 });
 

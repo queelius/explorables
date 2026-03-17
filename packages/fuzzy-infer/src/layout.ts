@@ -194,8 +194,26 @@ export function layoutTree(
   const classY = hasClassifications ? layerY(nextLayerIdx++) : 0;
   const speciesY = hasSpecies ? layerY(nextLayerIdx++) : 0;
 
-  // --- Layer 0: trait nodes (always show all) ---
-  const traitList = [...traitPreds].sort();
+  // --- Layer 0: trait nodes ---
+  // When firedRules is provided (active subgraph mode), only show traits that are
+  // either active (have a matching fact) or are conditions of a fired rule.
+  // This avoids showing 230 grey nodes at tier 3.
+  let traitList: string[];
+  if (firedRulesProvided) {
+    const firedCondPreds = new Set<string>();
+    for (const rule of activeRules) {
+      for (const cond of rule.conditions) {
+        if (traitPreds.has(cond.pred)) {
+          firedCondPreds.add(cond.pred);
+        }
+      }
+    }
+    traitList = [...traitPreds]
+      .filter((pred) => factDegs.has(pred) || firedCondPreds.has(pred))
+      .sort();
+  } else {
+    traitList = [...traitPreds].sort();
+  }
   const traitPositions = distributeHorizontally(traitList.length, traitY, width, padding);
   const traitNodeIds = new Map<string, string>();
   for (let i = 0; i < traitList.length; i++) {

@@ -28,6 +28,7 @@ export class WidgetControls {
   private config: ControlsConfig;
   private traits: TraitToggle[];
   private selectedIndex: number = -1;
+  private currentTier: number = 0;
 
   constructor(config: ControlsConfig) {
     this.config = config;
@@ -53,17 +54,17 @@ export class WidgetControls {
 
     const root = createElement('div', 'fuzzy-controls');
 
+    // Rule-count tier slider (rendered first so it stays visible above scrollable toggles)
+    if (this.config.showRuleSlider) {
+      root.appendChild(this.buildTierSlider());
+    }
+
     // Trait toggles section
     root.appendChild(this.buildToggles());
 
     // Degree slider for selected trait
     if (this.selectedIndex >= 0 && this.traits[this.selectedIndex]?.active) {
       root.appendChild(this.buildDegreeSlider());
-    }
-
-    // Rule-count tier slider
-    if (this.config.showRuleSlider) {
-      root.appendChild(this.buildTierSlider());
     }
 
     // Step controls
@@ -165,7 +166,7 @@ export class WidgetControls {
     const wrap = createElement('div', 'fuzzy-tier-wrap');
 
     const label = createElement('span', 'fuzzy-tier-label');
-    label.textContent = RULE_TIERS[0].label;
+    label.textContent = RULE_TIERS[this.currentTier].label;
     wrap.appendChild(label);
 
     const slider = document.createElement('input');
@@ -174,10 +175,11 @@ export class WidgetControls {
     slider.min = '0';
     slider.max = String(RULE_TIERS.length - 1);
     slider.step = '1';
-    slider.value = '0';
+    slider.value = String(this.currentTier);
     slider.addEventListener('input', () => {
       const idx = parseInt(slider.value, 10);
       if (idx < 0 || idx >= RULE_TIERS.length) return;
+      this.currentTier = idx;
       label.textContent = RULE_TIERS[idx].label;
       this.config.onRuleTierChange?.(idx);
     });
