@@ -2,6 +2,7 @@ import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { homedir } from 'os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -28,6 +29,22 @@ for (const pkg of packages) {
 
   mkdirSync(distDir, { recursive: true });
 
+  let define = {};
+  if (pkg === 'terminal-101') {
+    const dagshellDir = join(homedir(), 'github/alpha/dagshell/dagshell');
+    const pythonDir = join(pkgDir, 'python');
+
+    define = {
+      DAGSHELL_INIT: JSON.stringify(readFileSync(join(pythonDir, '__init__.py'), 'utf8')),
+      DAGSHELL_CORE: JSON.stringify(readFileSync(join(dagshellDir, 'dagshell.py'), 'utf8')),
+      DAGSHELL_FLUENT: JSON.stringify(readFileSync(join(dagshellDir, 'dagshell_fluent.py'), 'utf8')),
+      DAGSHELL_PARSER: JSON.stringify(readFileSync(join(dagshellDir, 'command_parser.py'), 'utf8')),
+      DAGSHELL_TERMINAL: JSON.stringify(readFileSync(join(dagshellDir, 'terminal.py'), 'utf8')),
+      BRIDGE_PY: JSON.stringify(readFileSync(join(pythonDir, 'bridge.py'), 'utf8')),
+      SEED_PY: JSON.stringify(readFileSync(join(pythonDir, 'seed.py'), 'utf8')),
+    };
+  }
+
   // Bundle TypeScript → IIFE
   await build({
     entryPoints: [srcEntry],
@@ -36,6 +53,7 @@ for (const pkg of packages) {
     minify: true,
     outfile: join(distDir, 'bundle.js'),
     target: 'es2020',
+    define,
   });
 
   const js = readFileSync(join(distDir, 'bundle.js'), 'utf8');
