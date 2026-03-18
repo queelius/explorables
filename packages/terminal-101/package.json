@@ -1,0 +1,8 @@
+{
+  "name": "@explorables/terminal-101",
+  "version": "1.0.0",
+  "description": "Interactive Linux terminal tutorial - learn the command line in your browser",
+  "deploy": {
+    "slug": "2026-03-18-terminal-101"
+  }
+}
