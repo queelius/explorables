@@ -1,40 +1,34 @@
 import { Terminal } from './terminal';
 import { Bridge } from './bridge';
+import { LessonEngine } from './engine';
 
-export function init(): void {
+export async function init(): Promise<void> {
   const root = document.getElementById('terminal-101');
   if (!root) return;
 
   const terminal = new Terminal(root);
-  terminal.writeLine('Booting virtual filesystem...', 'lesson');
-  terminal.disable();
-
   const bridge = new Bridge();
 
-  bridge.init((msg) => {
-    terminal.writeLine(msg, 'lesson');
-  }).then(() => {
-    terminal.writeLine('Ready.', 'success');
-    terminal.setPrompt(`${bridge.getCwd()} $ `);
-    terminal.enable();
+  terminal.writeLine('Booting virtual filesystem...', 'lesson');
 
-    (async () => {
-      while (true) {
-        const input = await terminal.getInput();
-        if (!input.trim()) continue;
-        const result = bridge.execute(input);
-        if (result.text) {
-          for (const line of result.text.split('\n')) {
-            terminal.writeLine(line, result.exitCode === 0 ? 'normal' : 'error');
-          }
-        }
-        terminal.setPrompt(`${bridge.getCwd()} $ `);
-      }
-    })();
-  }).catch((e) => {
-    terminal.writeLine(`Failed to initialize: ${e}`, 'error');
-    terminal.enable();
-  });
+  try {
+    await bridge.init((msg) => {
+      terminal.clear();
+      terminal.writeLine(msg, 'lesson');
+    });
+  } catch (e) {
+    terminal.writeLine('', 'normal');
+    terminal.writeLine("Could not load the terminal engine.", 'error');
+    terminal.writeLine('Check your connection and refresh to try again.', 'error');
+    return;
+  }
+
+  terminal.clear();
+  terminal.setPrompt('user@dagshell:~$ ');
+  terminal.enable();
+
+  const engine = new LessonEngine(terminal, bridge);
+  engine.run();
 }
 
 if (document.readyState === 'loading') {
