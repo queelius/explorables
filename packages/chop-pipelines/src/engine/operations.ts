@@ -1,4 +1,4 @@
-import { PixelBuffer, createPixelBuffer, getPixel } from './types';
+import { PixelBuffer, OpMeta, createPixelBuffer, getPixel } from './types';
 
 // ---------------------------------------------------------------------------
 // Internal helper
@@ -312,6 +312,80 @@ export function overlay(
 }
 
 export type MaskShape = 'circle' | 'ellipse' | 'roundrect';
+
+// ---------------------------------------------------------------------------
+// Operation Registry
+// ---------------------------------------------------------------------------
+
+/**
+ * Map from op name to a function that accepts a PixelBuffer plus positional
+ * args and keyword args and returns a transformed PixelBuffer.
+ *
+ * Composition ops (hstack, vstack, overlay) require multiple buffers; they
+ * are resolved by pipeline.ts during materialization and their entries here
+ * return the buffer unchanged as a fallback placeholder.
+ */
+export const OPERATIONS = new Map<
+  string,
+  (buf: PixelBuffer, args: unknown[], kwargs: Record<string, unknown>) => PixelBuffer
+>([
+  ['grayscale',  (buf)               => grayscale(buf)],
+  ['brightness', (buf, args)         => brightness(buf, args[0] as number)],
+  ['contrast',   (buf, args)         => contrast(buf, args[0] as number)],
+  ['opacity',    (buf, args)         => opacity(buf, args[0] as number)],
+  ['resize',     (buf, args)         => resize(buf, args[0] as number, args[1] as number)],
+  ['crop',       (buf, args)         => crop(buf, args[0] as number, args[1] as number, args[2] as number, args[3] as number)],
+  ['pad',        (buf, args)         => pad(buf, args[0] as number, args[1] as number, args[2] as number, args[3] as number, args[4] as number)],
+  ['border',     (buf, args)         => border(buf, args[0] as number, args[1] as number, args[2] as number, args[3] as number, args[4] as number)],
+  ['blur',       (buf, args)         => blur(buf, args[0] as number)],
+  ['mask',       (buf, args)         => mask(buf, args[0] as MaskShape, args[1] as number | undefined)],
+  // Composition ops: handled by pipeline.ts; return buf unchanged here.
+  ['hstack',     (buf)               => buf],
+  ['vstack',     (buf)               => buf],
+  ['overlay',    (buf)               => buf],
+]);
+
+/**
+ * UI metadata for all 16 ops: 13 transforms + 3 structural (load, save, apply).
+ */
+export const OP_META: OpMeta[] = [
+  // --- color transforms ---
+  { name: 'grayscale', label: 'Grayscale',  category: 'transform',    param: null },
+  { name: 'brightness', label: 'Brightness', category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1 } },
+  { name: 'contrast',   label: 'Contrast',   category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1 } },
+  { name: 'opacity',    label: 'Opacity',    category: 'transform',   param: { label: 'Factor', min: 0, max: 1, step: 0.01, defaultVal: 1 } },
+  // --- geometry transforms ---
+  { name: 'resize', label: 'Resize',    category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 64 } },
+  { name: 'crop',   label: 'Crop',      category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 32 } },
+  { name: 'pad',    label: 'Pad',       category: 'transform', param: { label: 'Amount', min: 0, max: 64,   step: 1, defaultVal: 4  } },
+  { name: 'border', label: 'Border',    category: 'transform', param: { label: 'Width',  min: 0, max: 64,   step: 1, defaultVal: 2  } },
+  // --- filter transforms ---
+  { name: 'blur',   label: 'Blur',      category: 'transform', param: { label: 'Radius', min: 0, max: 20,   step: 1, defaultVal: 1  } },
+  { name: 'mask',   label: 'Mask',      category: 'transform', param: null },
+  // --- composition (multi-image) ---
+  { name: 'hstack',  label: 'H-Stack',  category: 'composition', param: null },
+  { name: 'vstack',  label: 'V-Stack',  category: 'composition', param: null },
+  { name: 'overlay', label: 'Overlay',  category: 'composition', param: { label: 'Alpha', min: 0, max: 255, step: 1, defaultVal: 255 } },
+  // --- structural ---
+  { name: 'load',  label: 'Load',   category: 'structural', param: null },
+  { name: 'save',  label: 'Save',   category: 'structural', param: null },
+  { name: 'apply', label: 'Apply',  category: 'structural', param: null },
+];
+
+/**
+ * Dispatch an operation by name, passing buf + args + kwargs.
+ * Throws for unknown op names.
+ */
+export function applyOp(
+  name: string,
+  buf: PixelBuffer,
+  args: unknown[],
+  kwargs: Record<string, unknown>,
+): PixelBuffer {
+  const fn = OPERATIONS.get(name);
+  if (!fn) throw new Error(`Unknown operation: "${name}"`);
+  return fn(buf, args, kwargs);
+}
 
 /**
  * Apply a shape mask to the buffer by multiplying alpha.

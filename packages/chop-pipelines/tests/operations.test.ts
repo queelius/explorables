@@ -13,6 +13,9 @@ import {
   vstack,
   overlay,
   mask,
+  OPERATIONS,
+  OP_META,
+  applyOp,
 } from '../src/engine/operations';
 import { createPixelBuffer, getPixel } from '../src/engine/types';
 
@@ -606,5 +609,95 @@ describe('mask', () => {
     const buf = createPixelBuffer(4, 4, 255, 0, 0, 255);
     mask(buf, 'circle');
     expect(getPixel(buf, 0, 0)[3]).toBe(255);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Operation Registry (Task 5)
+// ---------------------------------------------------------------------------
+
+describe('OP_META', () => {
+  it('has 16 total entries (13 non-structural + 3 structural)', () => {
+    expect(OP_META).toHaveLength(16);
+  });
+
+  it('has 13 non-structural entries (transform + composition)', () => {
+    const nonStructural = OP_META.filter(m => m.category !== 'structural');
+    expect(nonStructural).toHaveLength(13);
+  });
+
+  it('has 3 structural entries (load, save, apply)', () => {
+    const structural = OP_META.filter(m => m.category === 'structural');
+    expect(structural).toHaveLength(3);
+    expect(structural.map(m => m.name)).toEqual(expect.arrayContaining(['load', 'save', 'apply']));
+  });
+
+  it('includes composition ops (hstack, vstack, overlay)', () => {
+    const composition = OP_META.filter(m => m.category === 'composition');
+    expect(composition.map(m => m.name)).toEqual(
+      expect.arrayContaining(['hstack', 'vstack', 'overlay']),
+    );
+  });
+
+  it('each entry has required fields: name, label, category', () => {
+    for (const meta of OP_META) {
+      expect(typeof meta.name).toBe('string');
+      expect(typeof meta.label).toBe('string');
+      expect(['transform', 'composition', 'structural']).toContain(meta.category);
+    }
+  });
+});
+
+describe('OPERATIONS map', () => {
+  const transformNames = OP_META
+    .filter(m => m.category === 'transform' || m.category === 'composition')
+    .map(m => m.name);
+
+  it('has an entry for each transform and composition op name', () => {
+    for (const name of transformNames) {
+      expect(OPERATIONS.has(name)).toBe(true);
+    }
+  });
+
+  it('does not have entries for structural ops (load, save, apply)', () => {
+    // structural ops are handled at the widget layer, not in the pixel-fn map
+    // They are NOT present in OPERATIONS
+    expect(OPERATIONS.has('load')).toBe(false);
+    expect(OPERATIONS.has('save')).toBe(false);
+    expect(OPERATIONS.has('apply')).toBe(false);
+  });
+});
+
+describe('applyOp', () => {
+  it('dispatches grayscale correctly: pure red → luminance 76', () => {
+    const buf = createPixelBuffer(1, 1, 255, 0, 0);
+    const out = applyOp('grayscale', buf, [], {});
+    const [r] = getPixel(out, 0, 0);
+    expect(r).toBe(76);
+  });
+
+  it('dispatches brightness with factor arg', () => {
+    const buf = createPixelBuffer(1, 1, 100, 100, 100);
+    const out = applyOp('brightness', buf, [2], {});
+    const [r] = getPixel(out, 0, 0);
+    expect(r).toBe(200);
+  });
+
+  it('dispatches resize with width/height args', () => {
+    const buf = createPixelBuffer(4, 4, 255, 0, 0);
+    const out = applyOp('resize', buf, [2, 2], {});
+    expect(out.width).toBe(2);
+    expect(out.height).toBe(2);
+  });
+
+  it('throws for unknown op name', () => {
+    const buf = createPixelBuffer(1, 1, 0, 0, 0);
+    expect(() => applyOp('nonexistent', buf, [], {})).toThrow(/nonexistent/);
+  });
+
+  it('kwargs are accepted without error (passed through)', () => {
+    const buf = createPixelBuffer(1, 1, 255, 0, 0);
+    // grayscale doesn't use kwargs; this should still work
+    expect(() => applyOp('grayscale', buf, [], { on: 'main' })).not.toThrow();
   });
 });
