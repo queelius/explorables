@@ -58,16 +58,7 @@ export function mountOneThing(container: HTMLElement): void {
 
     if (meta.param !== null) {
       const val = currentSliderGetter ? currentSliderGetter() : meta.param.defaultVal;
-
-      // For resize: convert percentage to pixel dimensions
-      if (meta.name === 'resize') {
-        const pct = val / 100;
-        const newW = Math.max(1, Math.round(defaultImg.width * pct));
-        const newH = Math.max(1, Math.round(defaultImg.height * pct));
-        pipeline = addOp(pipeline, 'resize', [newW, newH], {});
-      } else {
-        pipeline = addOp(pipeline, meta.name, [val], {});
-      }
+      pipeline = addOp(pipeline, meta.name, [val], {});
     } else {
       pipeline = addOp(pipeline, meta.name, [], {});
     }
@@ -86,9 +77,7 @@ export function mountOneThing(container: HTMLElement): void {
 
     const meta = getSelectedMeta();
     if (meta.param !== null) {
-      const paramConfig = meta.name === 'resize'
-        ? { label: 'Scale %', min: 10, max: 200, step: 1, defaultVal: 100 }
-        : meta.param;
+      const paramConfig = meta.param;
 
       const { container: sliderEl, getValue } = createParamSlider(paramConfig, () => {
         buildAndRender();

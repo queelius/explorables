@@ -333,7 +333,14 @@ export const OPERATIONS = new Map<
   ['brightness', (buf, args)         => brightness(buf, args[0] as number)],
   ['contrast',   (buf, args)         => contrast(buf, args[0] as number)],
   ['opacity',    (buf, args)         => opacity(buf, args[0] as number)],
-  ['resize',     (buf, args)         => resize(buf, args[0] as number, args[1] as number)],
+  ['resize',     (buf, args)         => {
+    // If a single arg is provided, treat it as a scale percentage
+    if (args.length === 1) {
+      const pct = (args[0] as number) / 100;
+      return resize(buf, Math.max(1, Math.round(buf.width * pct)), Math.max(1, Math.round(buf.height * pct)));
+    }
+    return resize(buf, args[0] as number, args[1] as number);
+  }],
   ['crop',       (buf, args)         => crop(buf, args[0] as number, args[1] as number, args[2] as number, args[3] as number)],
   ['pad',        (buf, args)         => pad(buf, args[0] as number, args[1] as number, args[2] as number, args[3] as number, args[4] as number)],
   ['border',     (buf, args)         => border(buf, args[0] as number, args[1] as number, args[2] as number, args[3] as number, args[4] as number)],
@@ -355,7 +362,7 @@ export const OP_META: OpMeta[] = [
   { name: 'contrast',   label: 'Contrast',   category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 3 } },
   { name: 'opacity',    label: 'Opacity',    category: 'transform',   param: { label: 'Factor', min: 0, max: 1, step: 0.01, defaultVal: 0.2 } },
   // --- geometry transforms ---
-  { name: 'resize', label: 'Resize',    category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 32 } },
+  { name: 'resize', label: 'Resize',    category: 'transform', param: { label: 'Scale %', min: 10, max: 200, step: 5, defaultVal: 50 } },
   { name: 'crop',   label: 'Crop',      category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 32 } },
   { name: 'pad',    label: 'Pad',       category: 'transform', param: { label: 'Amount', min: 0, max: 64,   step: 1, defaultVal: 16 } },
   { name: 'border', label: 'Border',    category: 'transform', param: { label: 'Width',  min: 0, max: 64,   step: 1, defaultVal: 8  } },
