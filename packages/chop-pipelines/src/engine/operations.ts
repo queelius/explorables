@@ -351,9 +351,9 @@ export const OPERATIONS = new Map<
 export const OP_META: OpMeta[] = [
   // --- color transforms ---
   { name: 'grayscale', label: 'Grayscale',  category: 'transform',    param: null },
-  { name: 'brightness', label: 'Brightness', category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1 } },
-  { name: 'contrast',   label: 'Contrast',   category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1 } },
-  { name: 'opacity',    label: 'Opacity',    category: 'transform',   param: { label: 'Factor', min: 0, max: 1, step: 0.01, defaultVal: 1 } },
+  { name: 'brightness', label: 'Brightness', category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1.5 } },
+  { name: 'contrast',   label: 'Contrast',   category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1.5 } },
+  { name: 'opacity',    label: 'Opacity',    category: 'transform',   param: { label: 'Factor', min: 0, max: 1, step: 0.01, defaultVal: 0.5 } },
   // --- geometry transforms ---
   { name: 'resize', label: 'Resize',    category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 64 } },
   { name: 'crop',   label: 'Crop',      category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 32 } },
