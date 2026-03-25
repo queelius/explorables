@@ -1,6 +1,6 @@
 ---
 title: "Pipes All the Way Down"
-date: 2026-03-24
+date: 2026-03-25
 draft: false
 description: "An interactive exploration of the Unix pipeline philosophy through image manipulation"
 tags:
