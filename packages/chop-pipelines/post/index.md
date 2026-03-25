@@ -15,6 +15,8 @@ Fifty years later you still use it every day. `ls | grep .ts | wc -l`. Three pro
 
 This post explores that idea through image processing. Instead of text streams, we have pixel buffers. Instead of `grep` and `sed`, we have `blur`, `rotate`, and `grayscale`. The plumbing is the same.
 
+<div id="chop-pipelines">
+
 ## One Thing Well
 
 McIlroy's first rule: write programs that do one thing and do it well.
