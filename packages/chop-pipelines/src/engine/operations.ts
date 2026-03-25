@@ -351,16 +351,16 @@ export const OPERATIONS = new Map<
 export const OP_META: OpMeta[] = [
   // --- color transforms ---
   { name: 'grayscale', label: 'Grayscale',  category: 'transform',    param: null },
-  { name: 'brightness', label: 'Brightness', category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1.5 } },
-  { name: 'contrast',   label: 'Contrast',   category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 1.5 } },
-  { name: 'opacity',    label: 'Opacity',    category: 'transform',   param: { label: 'Factor', min: 0, max: 1, step: 0.01, defaultVal: 0.5 } },
+  { name: 'brightness', label: 'Brightness', category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 3 } },
+  { name: 'contrast',   label: 'Contrast',   category: 'transform',   param: { label: 'Factor', min: 0, max: 4, step: 0.05, defaultVal: 3 } },
+  { name: 'opacity',    label: 'Opacity',    category: 'transform',   param: { label: 'Factor', min: 0, max: 1, step: 0.01, defaultVal: 0.2 } },
   // --- geometry transforms ---
-  { name: 'resize', label: 'Resize',    category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 64 } },
+  { name: 'resize', label: 'Resize',    category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 32 } },
   { name: 'crop',   label: 'Crop',      category: 'transform', param: { label: 'Width',  min: 1, max: 1024, step: 1, defaultVal: 32 } },
-  { name: 'pad',    label: 'Pad',       category: 'transform', param: { label: 'Amount', min: 0, max: 64,   step: 1, defaultVal: 4  } },
-  { name: 'border', label: 'Border',    category: 'transform', param: { label: 'Width',  min: 0, max: 64,   step: 1, defaultVal: 2  } },
+  { name: 'pad',    label: 'Pad',       category: 'transform', param: { label: 'Amount', min: 0, max: 64,   step: 1, defaultVal: 16 } },
+  { name: 'border', label: 'Border',    category: 'transform', param: { label: 'Width',  min: 0, max: 64,   step: 1, defaultVal: 8  } },
   // --- filter transforms ---
-  { name: 'blur',   label: 'Blur',      category: 'transform', param: { label: 'Radius', min: 0, max: 20,   step: 1, defaultVal: 1  } },
+  { name: 'blur',   label: 'Blur',      category: 'transform', param: { label: 'Radius', min: 0, max: 20,   step: 1, defaultVal: 5  } },
   { name: 'mask',   label: 'Mask',      category: 'transform', param: null },
   // --- composition (multi-image) ---
   { name: 'hstack',  label: 'H-Stack',  category: 'composition', param: null },
