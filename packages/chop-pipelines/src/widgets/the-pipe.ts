@@ -50,9 +50,9 @@ export function mountThePipe(container: HTMLElement): void {
   for (const meta of transforms) {
     const btn = createOpButton(meta, (m) => {
       const args = m.param !== null ? [m.param.defaultVal] : [];
-      // For resize: default to same size
+      // For resize: shrink to half size
       const resolvedArgs = m.name === 'resize'
-        ? [defaultImg.width, defaultImg.height]
+        ? [Math.round(defaultImg.width / 2), Math.round(defaultImg.height / 2)]
         : args;
       pipeline = addOp(pipeline, m.name, resolvedArgs, {});
       render();
