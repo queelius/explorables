@@ -97,6 +97,7 @@ export class Terminal {
     if (!this.enabled || !this.resolveInput) return;
 
     if (e.key === 'Enter') {
+      e.preventDefault();
       const value = this.inputBuffer;
       // Echo the prompt + input as a prompt-styled line
       this.writeLine(this.promptText + value, 'prompt');
@@ -144,7 +145,8 @@ export class Terminal {
     } else if (e.key === 'Tab') {
       e.preventDefault();
       // No action
-    } else if (e.key.length === 1) {
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      e.preventDefault();
       this.inputBuffer += e.key;
       this.inputSpan.textContent = this.inputBuffer;
     }

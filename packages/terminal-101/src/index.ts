@@ -19,6 +19,7 @@ export async function init(): Promise<void> {
   } catch (e) {
     terminal.writeLine('', 'normal');
     terminal.writeLine("Could not load the terminal engine.", 'error');
+    terminal.writeLine(String(e), 'error');
     terminal.writeLine('Check your connection and refresh to try again.', 'error');
     return;
   }

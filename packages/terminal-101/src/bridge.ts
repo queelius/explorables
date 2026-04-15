@@ -68,7 +68,10 @@ executor = CommandExecutor(shell)
 
   private loadDagshellFiles(): void {
     const pyFS = this.pyodide.FS;
-    pyFS.mkdir('/lib/python/dagshell');
+    // Create parent directories (may already exist)
+    try { pyFS.mkdir('/lib'); } catch (_) { /* exists */ }
+    try { pyFS.mkdir('/lib/python'); } catch (_) { /* exists */ }
+    try { pyFS.mkdir('/lib/python/dagshell'); } catch (_) { /* exists */ }
     for (const [path, content] of Object.entries(DAGSHELL_FILES)) {
       pyFS.writeFile(`/lib/python/${path}`, content);
     }
